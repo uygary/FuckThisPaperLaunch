@@ -133,9 +133,11 @@ if __name__ == "__main__":
                 try:
                     buy_now_button = browser.find_element_by_id("buy-now-button")
                     buy_now_button.click()
-                    time.sleep(2)
+                    #time.sleep(2)
 
                     # Buy Now price check
+                    wait.until(presence_of_element_located((By.ID, "turbo-checkout-iframe")))
+                    wait.until(visibility_of_element_located((By.ID, "turbo-checkout-iframe")))
                     buy_now_iframe = browser.find_element_by_id("turbo-checkout-iframe")
                     browser.switch_to.frame(buy_now_iframe)
                     wait.until(presence_of_element_located((By.ID, "turbo-checkout-panel-container")))
@@ -163,6 +165,7 @@ if __name__ == "__main__":
                     buy_count += 1
                     total_cost += buy_now_cost
                     log(f"Purchased {buy_count} of {MAX_BUY_COUNT} via Buy Now at: ${buy_now_cost}")
+                    browser.switch_to.parent_frame()
                     browser.get(ITEM_URL)
                     continue
                 except Exception as e:
