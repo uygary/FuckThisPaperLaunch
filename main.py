@@ -21,18 +21,21 @@ WHITELISTED_SELLERS = os.environ.get("WHITELISTED_SELLERS").split(",")
 MAX_COST_PER_ITEM = float(os.environ.get("MAX_COST_PER_ITEM"))
 MAX_BUY_COUNT = int(os.environ.get("MAX_BUY_COUNT"))
 IS_TEST_RUN = bool(strtobool(os.environ.get("IS_TEST_RUN")))
+TIMEOUT_IN_SECONDS = int(os.environ.get("TIMEOUT_IN_SECONDS"))
 
 
 if __name__ == "__main__":
     # Launch browser
     try:
+        os.system('color')
         amazon_buyer = AmazonBuyer(CHROME_DRIVER_PATH,
                                    AFFILIATE_URL,
                                    ITEM_ENDPOINT,
                                    WHITELISTED_SELLERS,
                                    MAX_COST_PER_ITEM,
                                    MAX_BUY_COUNT,
-                                   IS_TEST_RUN)
+                                   IS_TEST_RUN,
+                                   TIMEOUT_IN_SECONDS)
     except Exception as ex:
         Utility.log_error(f"Failed to open browser: {str(ex)}")
         exit()
@@ -43,7 +46,7 @@ if __name__ == "__main__":
         if is_authenticated:
             break
         else:
-            time.sleep(10)
+            time.sleep(TIMEOUT_IN_SECONDS)
 
     # Buy loop
     while amazon_buyer.current_buy_count < MAX_BUY_COUNT:
@@ -51,9 +54,9 @@ if __name__ == "__main__":
         # Inventory check
         is_item_bought = amazon_buyer.try_buy_item()
         if is_item_bought:
-            time.sleep(10)
+            time.sleep(2 * TIMEOUT_IN_SECONDS)  # Need to add purchase success detection.
         else:
-            time.sleep(5)
+            time.sleep(TIMEOUT_IN_SECONDS)
 
     Utility.log_warning(f"Purchased {amazon_buyer.current_buy_count} item(s) at a total cost of: {amazon_buyer.current_total_cost}.")
     del amazon_buyer

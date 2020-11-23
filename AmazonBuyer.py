@@ -21,7 +21,8 @@ class AmazonBuyer:
                  whitelisted_sellers,
                  max_cost_per_item,
                  max_buy_count,
-                 is_test_run):
+                 is_test_run,
+                 timeout_in_seconds):
         self.chrome_driver_path = chrome_driver_path
         self.affiliate_url = affiliate_url
         self.item_endpoint = item_endpoint
@@ -29,6 +30,7 @@ class AmazonBuyer:
         self.max_cost_per_item = max_cost_per_item
         self.max_buy_count = max_buy_count
         self.is_test_run = is_test_run
+        self.timeout_in_seconds = timeout_in_seconds
 
         self.item_url = f"{affiliate_url}{item_endpoint}"
         self.cart_url = f"{affiliate_url}{AmazonBuyer.CART_ENDPOINT}"
@@ -40,7 +42,7 @@ class AmazonBuyer:
         try:
             self.browser = webdriver.Chrome(self.chrome_driver_path)
             self.browser.get(self.affiliate_url)
-            self.wait = WebDriverWait(self.browser, 5)
+            self.wait = WebDriverWait(self.browser, self.timeout_in_seconds)
         except Exception as ex:
             Utility.log_error(f"Failed to open browser: {str(ex)}")
             raise
