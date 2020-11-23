@@ -50,7 +50,7 @@ class AmazonBuyer:
     def __del__(self):
         self.browser.quit()
 
-    def try_authenticate(self, login_email, login_password):
+    def try_authenticate(self, login_email: str, login_password: str) -> bool:
         try:
             self.browser.get(self.affiliate_url)
             self.wait.until(presence_of_element_located((By.LINK_TEXT, "Sign in")))
@@ -91,35 +91,7 @@ class AmazonBuyer:
 
             return False
 
-    def try_clear_cart(self):
-        try:
-            self.browser.get(self.cart_url)
-            existing_cart_items_container = self.browser.find_element_by_id("activeCartViewForm")
-
-            cart_empty = existing_cart_items_container.find_elements_by_xpath(AmazonBuyer.EMPTY_CART_SELECTOR)
-
-            if len(cart_empty) == 1:
-                return True
-
-            existing_cart_items_to_delete = existing_cart_items_container.find_elements_by_xpath(
-                "//form[@id='activeCartViewForm']//input[@value='Delete']")
-
-            for existing_cart_item_to_delete in existing_cart_items_to_delete:
-                existing_cart_item_to_delete.click()
-                #time.sleep(3)
-
-            self.wait.until(presence_of_element_located(
-                (By.XPATH, AmazonBuyer.EMPTY_CART_SELECTOR)))
-            self.wait.until(visibility_of_element_located(
-                (By.XPATH, AmazonBuyer.EMPTY_CART_SELECTOR)))
-
-            return True
-        except Exception as ex:
-            Utility.log_warning(f"Failed to clear cart: {str(ex)}")
-
-            return False
-
-    def try_buy_item(self):
+    def try_buy_item(self) -> bool:
         try:
             # Remove existing items from cart
             if not self.try_clear_cart():
@@ -153,6 +125,34 @@ class AmazonBuyer:
             return self.try_purchase_via_cart()
         except Exception as ex:
             Utility.log_verbose(f"Failed to buy item: {str(ex)}")
+            return False
+
+    def try_clear_cart(self):
+        try:
+            self.browser.get(self.cart_url)
+            existing_cart_items_container = self.browser.find_element_by_id("activeCartViewForm")
+
+            cart_empty = existing_cart_items_container.find_elements_by_xpath(AmazonBuyer.EMPTY_CART_SELECTOR)
+
+            if len(cart_empty) == 1:
+                return True
+
+            existing_cart_items_to_delete = existing_cart_items_container.find_elements_by_xpath(
+                "//form[@id='activeCartViewForm']//input[@value='Delete']")
+
+            for existing_cart_item_to_delete in existing_cart_items_to_delete:
+                existing_cart_item_to_delete.click()
+                #time.sleep(3)
+
+            self.wait.until(presence_of_element_located(
+                (By.XPATH, AmazonBuyer.EMPTY_CART_SELECTOR)))
+            self.wait.until(visibility_of_element_located(
+                (By.XPATH, AmazonBuyer.EMPTY_CART_SELECTOR)))
+
+            return True
+        except Exception as ex:
+            Utility.log_warning(f"Failed to clear cart: {str(ex)}")
+
             return False
 
     def try_check_seller(self):
