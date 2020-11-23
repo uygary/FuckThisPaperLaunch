@@ -19,6 +19,8 @@ Then edit the `.env` file to update these values:
 `MAX_BUY_COUNT`
 Feel free to change the `ITEM_ENDPOINT` setting as well.
 
+Update the `IS_TEST_RUN` value to `False` when you're happy with the settings.
+
 ## Run
 
 ```

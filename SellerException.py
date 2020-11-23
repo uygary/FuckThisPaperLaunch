@@ -1,0 +1,2 @@
+class SellerException(Exception):
+    pass
