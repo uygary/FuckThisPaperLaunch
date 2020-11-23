@@ -21,6 +21,7 @@ class AmazonBuyer:
                  whitelisted_sellers,
                  max_cost_per_item,
                  max_buy_count,
+                 buy_now_only,
                  is_test_run,
                  timeout_in_seconds):
         self.chrome_driver_path = chrome_driver_path
@@ -29,6 +30,7 @@ class AmazonBuyer:
         self.whitelisted_sellers = whitelisted_sellers
         self.max_cost_per_item = max_cost_per_item
         self.max_buy_count = max_buy_count
+        self.buy_now_only = buy_now_only
         self.is_test_run = is_test_run
         self.timeout_in_seconds = timeout_in_seconds
 
@@ -47,8 +49,8 @@ class AmazonBuyer:
             Utility.log_error(f"Failed to open browser: {str(ex)}")
             raise
 
-    def __del__(self):
-        self.browser.quit()
+    #def __del__(self):
+    #    self.browser.quit()
 
     def try_authenticate(self, login_email: str, login_password: str) -> bool:
         try:
@@ -108,21 +110,22 @@ class AmazonBuyer:
             if self.try_buy_now():
                 return True
 
-            # Remove existing items from cart
-            if not self.try_clear_cart():
-                return False
+            if not self.buy_now_only:
+                # Remove existing items from cart
+                if not self.try_clear_cart():
+                    return False
 
-            # Go to listing
-            self.browser.get(self.item_url)
-            #self.browser.refresh()
-            #self.browser.get(self.item_url)
+                # Go to listing
+                self.browser.get(self.item_url)
+                #self.browser.refresh()
+                #self.browser.get(self.item_url)
 
-            # Check seller
-            if not self.try_check_seller():
-                return False
+                # Check seller
+                if not self.try_check_seller():
+                    return False
 
-            # Attempt to buy via cart
-            return self.try_purchase_via_cart()
+                # Attempt to buy via cart
+                return self.try_purchase_via_cart()
         except Exception as ex:
             Utility.log_verbose(f"Failed to buy item: {str(ex)}")
             return False
@@ -281,3 +284,9 @@ class AmazonBuyer:
             Utility.log_verbose(f"Failed to buy item via cart. Current stock: {self.current_buy_count} of {self.max_buy_count} at: {self.current_total_cost}. Error was: {str(ex)}")
 
             return False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, ex_type, ex_value, ex_traceback):
+        self.browser.quit()
