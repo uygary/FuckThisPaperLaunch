@@ -5,6 +5,7 @@ from distutils.util import strtobool
 from os.path import join, dirname
 from dotenv import load_dotenv
 from Utility import Utility
+from BuyerInterface import BuyerInterface
 from AmazonBuyer import AmazonBuyer
 
 
@@ -28,6 +29,8 @@ if __name__ == "__main__":
     # Launch browser
     try:
         os.system('color')
+
+        AmazonBuyer.register(BuyerInterface)
         amazon_buyer = AmazonBuyer(CHROME_DRIVER_PATH,
                                    AFFILIATE_URL,
                                    ITEM_ENDPOINT,
