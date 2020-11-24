@@ -5,6 +5,8 @@ from distutils.util import strtobool
 from os.path import join, dirname
 from dotenv import load_dotenv
 from Utility import Utility
+from DisposableList import DisposableList
+from ThreadSafeCounter import ThreadSafeCounter
 from BuyerInterface import BuyerInterface
 from AmazonBuyer import AmazonBuyer
 
@@ -17,50 +19,66 @@ CHROME_DRIVER_PATH = os.environ.get("CHROME_DRIVER_PATH")
 LOGIN_EMAIL = os.environ.get("LOGIN_EMAIL")
 LOGIN_PASSWORD = os.environ.get("LOGIN_PASSWORD")
 AFFILIATE_URL = os.environ.get("AFFILIATE_URL")
-ITEM_ENDPOINT = os.environ.get("ITEM_ENDPOINT")
 WHITELISTED_SELLERS = os.environ.get("WHITELISTED_SELLERS").split(",")
-MAX_COST_PER_ITEM = float(os.environ.get("MAX_COST_PER_ITEM"))
-MAX_BUY_COUNT = int(os.environ.get("MAX_BUY_COUNT"))
 BUY_NOW_ONLY = bool(strtobool(os.environ.get("BUY_NOW_ONLY")))
 IS_TEST_RUN = bool(strtobool(os.environ.get("IS_TEST_RUN")))
 TIMEOUT_IN_SECONDS = int(os.environ.get("TIMEOUT_IN_SECONDS"))
 
+NUMBER_OF_ITEMS = int(os.environ.get("NUMBER_OF_ITEMS"))
+ITEM_ENDPOINTS = list[str]()
+MAX_BUY_COUNTS = list[int]()
+MAX_COST_PER_ITEM_LIMITS = list[float]()
+ITEM_COUNTERS = list[ThreadSafeCounter]()
+
+for i in range (NUMBER_OF_ITEMS):
+    item_indice = i + 1;    # Just to prevent counter-intuitive index in the configuration.
+    ITEM_ENDPOINTS.append(os.environ.get(f"ITEM_ENDPOINT_{item_indice}"))
+    MAX_BUY_COUNTS.append(int(os.environ.get(f"MAX_BUY_COUNT_{item_indice}")))
+    MAX_COST_PER_ITEM_LIMITS.append(float(os.environ.get(f"MAX_COST_PER_ITEM_{item_indice}")))
+    ITEM_COUNTERS.append(ThreadSafeCounter())
 
 if __name__ == "__main__":
     try:
         os.system('color')
 
-        AmazonBuyer.register(BuyerInterface)
-        
-        # Launch browser
-        with AmazonBuyer(CHROME_DRIVER_PATH,
+        # This still needs a lot of work. Is it worth investing in?
+        BuyerInterface.register(AmazonBuyer)
+
+        # Launch browsers
+        with DisposableList[BuyerInterface] as buyers:
+            for i in range (NUMBER_OF_ITEMS):
+                amazon_buyer = AmazonBuyer(CHROME_DRIVER_PATH,
                                    AFFILIATE_URL,
-                                   ITEM_ENDPOINT,
+                                   ITEM_ENDPOINTS[i],
                                    WHITELISTED_SELLERS,
-                                   MAX_COST_PER_ITEM,
-                                   MAX_BUY_COUNT,
+                                   MAX_COST_PER_ITEM_LIMITS[i],
+                                   MAX_BUY_COUNTS[i],
                                    BUY_NOW_ONLY,
                                    IS_TEST_RUN,
-                                   TIMEOUT_IN_SECONDS)\
-        as amazon_buyer:
+                                   TIMEOUT_IN_SECONDS,
+                                   ITEM_COUNTERS[i])
+                
+                buyers.append(amazon_buyer)
 
             # Authenticate
-            while not amazon_buyer.is_authenticated:
-                is_authenticated = amazon_buyer.try_authenticate(LOGIN_EMAIL, LOGIN_PASSWORD)
-                if is_authenticated:
-                    break
-                else:
-                    time.sleep(TIMEOUT_IN_SECONDS)
+            for buyer in buyers:
+                while not buyer.is_authenticated:
+                    is_authenticated = buyer.try_authenticate(LOGIN_EMAIL, LOGIN_PASSWORD)
+                    if is_authenticated:
+                        break
+                    else:
+                        time.sleep(TIMEOUT_IN_SECONDS)
 
             # Buy loop
-            while amazon_buyer.current_buy_count < MAX_BUY_COUNT:
-
-                # Inventory check
-                is_item_bought = amazon_buyer.try_buy_item()
-                if is_item_bought:
-                    time.sleep(2 * TIMEOUT_IN_SECONDS)  # Need to add purchase success detection.
-                else:
-                    time.sleep(TIMEOUT_IN_SECONDS)
+            
+            for buyer in buyers:
+                while buyer.item_counter.get() < buyer.max_buy_count:
+                    # Inventory check
+                    is_item_bought = buyer.try_buy_item()
+                    if is_item_bought:
+                        time.sleep(2 * TIMEOUT_IN_SECONDS)  # Need to add purchase success detection.
+                    else:
+                        time.sleep(TIMEOUT_IN_SECONDS)
                     
             Utility.log_warning(f"Purchased {amazon_buyer.current_buy_count} item(s) at a total cost of: {amazon_buyer.current_total_cost}.")
     except Exception as ex:
