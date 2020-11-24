@@ -41,7 +41,6 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
         self.cart_url = f"{affiliate_url}{AmazonBuyer.CART_ENDPOINT}"
 
         self.is_authenticated = False
-        self.current_total_cost = 0.00
 
         try:
             self.browser = webdriver.Chrome(self.chrome_driver_path)
@@ -51,6 +50,8 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             Utility.log_error(f"Failed to open browser: {str(ex)}")
             raise
 
+    # Implementing both __del__ and __exit__ because I'm not sure how mature the garbage collection is under catastrophic events.
+    # I assume just __del__ would be enough, but using with nevertheless. No harm in being cautious.
     def __del__(self):
         self.browser.quit()
 
@@ -236,7 +237,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             turbo_checkout_button = self.browser.find_element_by_id("turbo-checkout-pyo-button")
 
             # Check if the item is bought via another BuyerInterface instance.
-            if self.item_counter.get() >= max_buy_count:
+            if self.item_counter.get()[0] >= max_buy_count:
                 return False
 
             if self.is_test_run:
@@ -245,8 +246,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
                 turbo_checkout_button.click()
 
             # If we reached this far, it should mean success
-            self.item_counter.increment()
-            self.current_total_cost += buy_now_cost
+            self.item_counter.increment(1, buy_now_cost)
             Utility.log_warning(f"Purchased {self.item_counter.get()} of {self.max_buy_count} via Buy Now at: {buy_now_cost}")
             self.browser.switch_to.parent_frame()
 
@@ -282,7 +282,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             order_confirmation_button = self.browser.find_element_by_name("placeYourOrder1")
 
             # Check if the item is bought via another BuyerInterface instance.
-            if self.item_counter.get() >= max_buy_count:
+            if self.item_counter.get()[0] >= max_buy_count:
                 return False
 
             if self.is_test_run:
@@ -290,8 +290,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             else:
                 order_confirmation_button.click()
 
-            self.item_counter.increment()
-            self.current_total_cost += add_to_cart_cost
+            self.item_counter.increment(1, add_to_cart_cost)
             Utility.log_warning(f"Purchased {self.item_counter.get()} of {self.max_buy_count} via Add to Cart at: {add_to_cart_cost}")
 
             return True

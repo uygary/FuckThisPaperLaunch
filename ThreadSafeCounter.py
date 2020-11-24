@@ -3,13 +3,15 @@ import threading
 
 class ThreadSafeCounter(object):
     def __init__(self):
-        self._value = 0
+        self._count = 0
+        self._cost = 0.00
         self._lock = threading.Lock()
 
-    def increment(self):
+    def increment(self, count, cost):
         with self._lock:
-            self._value += 1
+            self._count += count
+            self._cost += cost
 
-    def get(self) -> int:
+    def get(self) -> (int, float):
         with self._lock:
-            return self._value
+            return (self._count, self._cost)
