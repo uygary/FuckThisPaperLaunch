@@ -45,3 +45,7 @@ class Utility:
         parsed_price = float(cleaned_price_string)
 
         return parsed_price
+
+    @staticmethod
+    def beep():
+        print("\a")

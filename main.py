@@ -55,7 +55,8 @@ if __name__ == "__main__":
                 # Inventory check
                 is_item_bought = amazon_buyer.try_buy_item()
                 if is_item_bought:
-                    time.sleep(2 * TIMEOUT_IN_SECONDS)  # Need to add purchase success detection.
+                    Utility.beep()
+                    time.sleep(3 * TIMEOUT_IN_SECONDS)  # Need to add purchase success detection.
                 else:
                     time.sleep(TIMEOUT_IN_SECONDS)
                     
