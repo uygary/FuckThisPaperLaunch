@@ -51,6 +51,7 @@ if __name__ == "__main__":
 
             # Buy loop
             while amazon_buyer.current_buy_count < MAX_BUY_COUNT:
+                Utility.log_information(f"Current stock: {amazon_buyer.current_buy_count} of {amazon_buyer.max_buy_count}.")
 
                 # Inventory check
                 is_item_bought = amazon_buyer.try_buy_item()
