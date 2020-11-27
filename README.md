@@ -36,6 +36,8 @@ PS D:\CODE\FuckThisPaperLaunch> .\init.ps1
 ```
 This will basically initialize a virtual environment, activate it, and install dependencies.
 
+---
+
 ## Run
 On the same PowerShell prompt just run the `start.ps1` script.
 
