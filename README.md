@@ -9,6 +9,8 @@ Since I work with PowerShell, the scripts and these instructions are based on th
 ---
 
 ## Populate `.env` file
+This step is necessary only on the first run.
+
 
 ```
 PS D:\CODE\FuckThisPaperLaunch> cp .\.env.sample .\.env
@@ -23,6 +25,9 @@ Feel free to change the `ITEM_ENDPOINT` setting as well.
 Update the `IS_TEST_RUN` value to `False` when you're happy with the settings.
 
 ## Install dependencies
+This step is necessary only on the first run.
+
+
 Open up a PowerShell prompt. (Windows Terminal, ConEmu, or just a PS prompt)
 Then run the `init.ps1` script.
 
