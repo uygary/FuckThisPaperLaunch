@@ -27,7 +27,7 @@ Open up a PowerShell prompt. (Windows Terminal, ConEmu, or just a PS prompt)
 Then run the `init.ps1` script.
 
 ```
-PS D:\CODE\FuckThisPaperLaunch> python.exe .\init.ps1
+PS D:\CODE\FuckThisPaperLaunch> .\init.ps1
 ```
 This will basically initialize a virtual environmentm, activate it, and install dependencies.
 
@@ -35,7 +35,7 @@ This will basically initialize a virtual environmentm, activate it, and install 
 On the same PowerShell prompt just run the `start.ps1` script.
 
 ```
-PS D:\CODE\FuckThisPaperLaunch> python.exe .\start.ps1
+PS D:\CODE\FuckThisPaperLaunch> .\start.ps1
 ```
 This will simply run the script.
 Of course you could just use PyCharm Community Edition or Visual Studio to run this if you wanna fiddle around with the code and debug it.
