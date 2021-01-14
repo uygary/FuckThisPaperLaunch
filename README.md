@@ -4,7 +4,8 @@ Shitty script for purchasing a Ryzen 9 5950X on Amazon.
 
 None of this shit is tested that well really, and I haven't quite touched Python for 2 decades, so you're on your own if things go south.
 Keep in mind that it ignores currency, so set your prices and item links carefully.
-Since I work with PowerShell, the scripts and these instructions are based on that, but of course you could use any shell you want in order to run this.
+Since I work with PowerShell, the scripts and these instructions are based on that, but of course you could use any shell you want in order to run this.  
+There's a bunch of issues around break handling. And still more refactor to do around multiple buyer implementations.
 
 ---
 
