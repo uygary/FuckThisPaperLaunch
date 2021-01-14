@@ -76,9 +76,12 @@ if __name__ == "__main__":
             # Buy loop
             for buyer in buyers:
                 while buyer.item_counter.get()[0] < buyer.max_buy_count:
+                    Utility.log_information(f"Current stock on buyer: {buyer.item_counter.get()[0]} of {buyer.max_buy_count}.")
+
                     # Inventory check
                     is_item_bought = buyer.try_buy_item()
                     if is_item_bought:
+                        Utility.beep()
                         time.sleep(2 * TIMEOUT_IN_SECONDS)  # Need to add purchase success detection.
                     else:
                         time.sleep(TIMEOUT_IN_SECONDS)
