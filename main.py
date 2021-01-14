@@ -2,6 +2,7 @@
 import time
 import os
 import sys
+import concurrent.futures
 from distutils.util import strtobool
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -66,7 +67,7 @@ if __name__ == "__main__":
                 buyers.append(amazon_buyer)
 
             # Authenticate
-            for i in range (NUMBER_OF_ITEMS):
+            for i in range (len(buyers)):
                 buyer = buyers[i]
                 while not buyer.is_authenticated:
                     is_authenticated = buyer.try_authenticate(LOGIN_EMAILS[i], LOGIN_PASSWORDS[i])
@@ -75,9 +76,7 @@ if __name__ == "__main__":
                     else:
                         time.sleep(TIMEOUT_IN_SECONDS)
 
-            # Buy loop
-            for buyer in buyers:
-                # This loop needs to go into a task/thread/coroutine/whatever.
+            def execute_buyer(buyer):
                 while buyer.item_counter.get()[0] < buyer.max_buy_count:
                     Utility.log_information(f"Current stock on buyer: {buyer.item_counter.get()[0]} of {buyer.max_buy_count}.")
 
@@ -88,6 +87,9 @@ if __name__ == "__main__":
                         time.sleep(2 * TIMEOUT_IN_SECONDS)  # Need to add purchase success detection.
                     else:
                         time.sleep(TIMEOUT_IN_SECONDS)
+            # Buy loops
+            with concurrent.futures.ThreadPoolExecutor(len(buyers)) as executor:
+                executor.map(execute_buyer, buyers)
                     
             for i in range(NUMBER_OF_ITEMS):
                 current_purchase = ITEM_COUNTERS[i].get()
