@@ -77,6 +77,7 @@ if __name__ == "__main__":
 
             # Buy loop
             for buyer in buyers:
+                # This loop needs to go into a task/thread/coroutine/whatever.
                 while buyer.item_counter.get()[0] < buyer.max_buy_count:
                     Utility.log_information(f"Current stock on buyer: {buyer.item_counter.get()[0]} of {buyer.max_buy_count}.")
 
@@ -89,9 +90,9 @@ if __name__ == "__main__":
                         time.sleep(TIMEOUT_IN_SECONDS)
                     
             for i in range(NUMBER_OF_ITEMS):
-                current_count = ITEM_COUNTERS[i].get()
+                current_purchase = ITEM_COUNTERS[i].get()
 
-                Utility.log_warning(f"Purchased item #{i+1}: {current_count[0]} item(s) at a total cost of: {current_count[1]}.")
+                Utility.log_warning(f"Purchased item #{i+1}: {current_purchase[0]} item(s) at a total cost of: {current_purchase[1]}.")
     except Exception as ex:
         Utility.log_error(f"Unhandled exception occured: {str(ex)}")
         sys.exit(1)
