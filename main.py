@@ -10,13 +10,13 @@ from DisposableList import DisposableList
 from ThreadSafeCounter import ThreadSafeCounter
 from BuyerInterface import BuyerInterface
 from AmazonBuyer import AmazonBuyer
+from chromedriver_py import binary_path as chrome_driver_path
 
 
 load_dotenv(verbose=True)
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-CHROME_DRIVER_PATH = os.environ.get("CHROME_DRIVER_PATH")
 AFFILIATE_URL = os.environ.get("AFFILIATE_URL")
 WHITELISTED_SELLERS = os.environ.get("WHITELISTED_SELLERS").split(",")
 BUY_NOW_ONLY = bool(strtobool(os.environ.get("BUY_NOW_ONLY")))
@@ -44,13 +44,15 @@ if __name__ == "__main__":
     try:
         os.system('color')
 
+        Utility.log_verbose(f"Using Chrome driver at: {chrome_driver_path}")
+
         # This still needs a lot of work. Is it worth investing in?
         BuyerInterface.register(AmazonBuyer)
 
         # Launch browsers
         with DisposableList[BuyerInterface]() as buyers:
             for i in range (NUMBER_OF_ITEMS):
-                amazon_buyer = AmazonBuyer(CHROME_DRIVER_PATH,
+                amazon_buyer = AmazonBuyer(chrome_driver_path,
                                    AFFILIATE_URL,
                                    ITEM_ENDPOINTS[i],
                                    WHITELISTED_SELLERS,

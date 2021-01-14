@@ -10,5 +10,6 @@ class DisposableList(list):
 
     def __exit__(self, ex_type, ex_value, ex_traceback):
         for element in self:
+            # As per my comment on AmazonBuyer, I'm not sure about garbage collector scenarios.
             with element:
                 pass

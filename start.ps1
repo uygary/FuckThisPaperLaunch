@@ -1,5 +1,12 @@
-if (!(Test-Path env:VIRTUAL_ENV))
-{
+if (!(Test-Path env:VIRTUAL_ENV)) {
 	.\venv\Scripts\Activate.ps1
 }
-python.exe .\main.py
+try {
+	python.exe .\main.py
+}
+catch {
+	Write-Host $_
+}
+finally {
+	deactivate
+}
