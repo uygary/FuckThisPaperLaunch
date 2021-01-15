@@ -7,6 +7,10 @@ from selenium.webdriver.support.expected_conditions import presence_of_element_l
     element_to_be_clickable, \
     visibility_of_element_located
 from selenium.common.exceptions import NoSuchElementException
+from urllib3.exceptions import ProtocolError
+from urllib3.exceptions import MaxRetryError
+from urllib3.exceptions import NewConnectionError
+from BrowserConnectionException import BrowserConnectionException
 from SellerException import SellerException
 from Utility import Utility
 
@@ -17,6 +21,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
 
     def __init__(self,
                  chrome_driver_path,
+                 item_name,
                  affiliate_url,
                  item_endpoint,
                  whitelisted_sellers,
@@ -25,8 +30,10 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
                  buy_now_only,
                  is_test_run,
                  timeout_in_seconds,
-                 item_counter):
+                 item_counter,
+                 max_retry_limit):
         self.chrome_driver_path = chrome_driver_path
+        self.item_name = item_name
         self.affiliate_url = affiliate_url
         self.item_endpoint = item_endpoint
         self.whitelisted_sellers = whitelisted_sellers
@@ -41,6 +48,9 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
         self.cart_url = f"{affiliate_url}{AmazonBuyer.CART_ENDPOINT}"
 
         self.is_authenticated = False
+        
+        self.max_retry_limit = max_retry_limit
+        self.retry_counter = 0
 
         try:
             self.browser = webdriver.Chrome(self.chrome_driver_path)
@@ -103,6 +113,9 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             return False
 
     def try_buy_item(self) -> bool:
+        if self.retry_counter == self.max_retry_limit:
+            raise BrowserConnectionException("Maximum retry limit reached!")
+
         try:
             # Remove existing items from cart
             if not self.try_clear_cart():
@@ -161,10 +174,19 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             self.wait.until(visibility_of_element_located(
                 (By.XPATH, AmazonBuyer.EMPTY_CART_SELECTOR)))
 
+            self.retry_counter = 0
             return True
+        except ProtocolError as ex:
+            Utility.log_error(f"Dafuq?: {str(ex)}")
+            self.retry_counter += 1
+            return False
+        except MaxRetryError as ex:
+            if type(ex.reason) is NewConnectionError:
+                Utility.log_error(f"Cannot connect to Chrome: {str(ex)}")
+                self.retry_counter += 1
+            return False
         except Exception as ex:
             Utility.log_warning(f"Failed to clear cart: {str(ex)}")
-
             return False
 
     def try_check_seller(self):
@@ -247,7 +269,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
 
             # If we reached this far, it should mean success
             self.item_counter.increment(1, buy_now_cost)
-            Utility.log_warning(f"Purchased {self.item_counter.get()} of {self.max_buy_count} via Buy Now at: {buy_now_cost}")
+            Utility.log_warning(f"Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Buy Now at: {buy_now_cost}")
             self.browser.switch_to.parent_frame()
 
             return True
@@ -291,11 +313,11 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
                 order_confirmation_button.click()
 
             self.item_counter.increment(1, add_to_cart_cost)
-            Utility.log_warning(f"Purchased {self.item_counter.get()} of {self.max_buy_count} via Add to Cart at: {add_to_cart_cost}")
+            Utility.log_warning(f"Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Add to Cart at: {add_to_cart_cost}")
 
             return True
 
         except Exception as ex:
-            Utility.log_verbose(f"Failed to buy item via cart. Current stock: {self.item_counter.get()} of {self.max_buy_count} at: {self.current_total_cost}. Error was: {str(ex)}")
+            Utility.log_verbose(f"Failed to buy item via cart. Current stock: {self.item_counter.get()[0]} of {self.max_buy_count} at: {self.item_counter.get()[1]}. Error was: {str(ex)}")
 
             return False
