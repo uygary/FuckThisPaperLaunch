@@ -169,6 +169,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             cart_empty = existing_cart_items_container.find_elements_by_xpath(AmazonBuyer.EMPTY_CART_SELECTOR)
 
             if len(cart_empty) == 1:
+                self.retry_counter = 0
                 return True
 
             existing_cart_items_to_delete = existing_cart_items_container.find_elements_by_xpath(
