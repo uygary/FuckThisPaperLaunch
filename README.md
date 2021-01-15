@@ -57,3 +57,5 @@ PS D:\CODE\FuckThisPaperLaunch> .\start.ps1
 ```
 This will simply run the script.
 Of course you could just use PyCharm Community Edition or Visual Studio to run this if you wanna fiddle around with the code and debug it.
+
+In order to stop the bot, just press CRTL+C and wait for it to shut itself down, disposing the browser connections.  It will take some time, but I suspect it might be safer to wait for it to do its thing. Since I'm not really familiar with the native driver, I'm not really sure whether it leaks or not otherwise.
