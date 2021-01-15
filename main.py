@@ -49,6 +49,14 @@ for i in range (NUMBER_OF_ITEMS):
 if __name__ == "__main__":
     try:
         is_shutting_down = False
+            
+        # For semi-gracefully handling CTRL+C
+        def break_handler(sig, frame):
+            is_shutting_down = True
+            
+        # Check out if we can trigger this without waiting for futures to complete.
+        signal.signal(signal.SIGINT, break_handler)
+
         os.system('color')
 
         Utility.log_verbose(f"Using Chrome driver at: {chrome_driver_path}")
@@ -77,7 +85,7 @@ if __name__ == "__main__":
             # Authenticate
             for i in range (len(buyers)):
                 buyer = buyers[i]
-                while not buyer.is_authenticated:
+                while not is_shutting_down and not buyer.is_authenticated:
                     is_authenticated = buyer.try_authenticate(LOGIN_EMAILS[i], LOGIN_PASSWORDS[i])
                     if is_authenticated:
                         break
@@ -96,16 +104,9 @@ if __name__ == "__main__":
                             time.sleep(2 * TIMEOUT_IN_SECONDS)  # Need to add purchase success detection.
                         else:
                             time.sleep(TIMEOUT_IN_SECONDS)
-                    except BrowserConnectionException as ex:
-                        Utility.log_error(f"Buyer faced fatal error trying to purchase {buyer.item_name}: {str(ex)}")
+                    except BrowserConnectionException as cex:
+                        Utility.log_error(f"Buyer faced fatal error trying to purchase {buyer.item_name}: {str(cex)}")
                         raise
-            
-            # For semi-gracefully handling CTRL+C
-            def break_handler(sig, frame):
-                is_shutting_down = True
-            
-            # Why is this not working?
-            signal.signal(signal.SIGINT, break_handler)
 
             # Buy loops
             with concurrent.futures.ThreadPoolExecutor(len(buyers)) as executor:

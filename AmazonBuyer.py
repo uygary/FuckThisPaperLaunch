@@ -72,6 +72,9 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
         self.browser.quit()
 
     def try_authenticate(self, login_email: str, login_password: str) -> bool:
+        if self.retry_counter == self.max_retry_limit:
+            raise BrowserConnectionException("Maximum retry limit reached!")
+
         try:
             self.browser.get(self.affiliate_url)
             self.wait.until(presence_of_element_located((By.LINK_TEXT, "Sign in")))
@@ -104,12 +107,17 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             self.wait.until(presence_of_element_located((By.ID, "nav-item-signout")))
             Utility.log_verbose("Successfully logged in.")
             self.is_authenticated = True
-
+            
+            self.retry_counter = 0
             return True
+
+        except (ProtocolError, MaxRetryError) as cex:
+            Utility.log_error(f"Cannot connect to Chrome: {str(cex)}")
+            self.retry_counter += 1
+            return False
         except Exception as ex:
             self.is_authenticated = False
             Utility.log_error(f"Failed to log in: {str(ex)}")
-
             return False
 
     def try_buy_item(self) -> bool:
@@ -148,6 +156,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
 
                 # Attempt to buy via cart
                 return self.try_purchase_via_cart()
+
         except Exception as ex:
             Utility.log_verbose(f"Failed to buy item: {str(ex)}")
             return False
@@ -176,14 +185,10 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
 
             self.retry_counter = 0
             return True
-        except ProtocolError as ex:
-            Utility.log_error(f"Dafuq?: {str(ex)}")
+
+        except (ProtocolError, MaxRetryError) as cex:
+            Utility.log_error(f"Cannot connect to Chrome: {str(cex)}")
             self.retry_counter += 1
-            return False
-        except MaxRetryError as ex:
-            if type(ex.reason) is NewConnectionError:
-                Utility.log_error(f"Cannot connect to Chrome: {str(ex)}")
-                self.retry_counter += 1
             return False
         except Exception as ex:
             Utility.log_warning(f"Failed to clear cart: {str(ex)}")
@@ -200,6 +205,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
 
             if all(seller_info not in seller for seller in self.whitelisted_sellers):
                 raise SellerException("Seller is not whitelisted.")
+
         except SellerException as sex:
             Utility.log_verbose(f"Seller is not whitelisted: {str(sex)}")
             return False
@@ -220,8 +226,9 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             no_thanks.click()
 
             return True
+
         except Exception as ex:
-            Utility.log_verbose(f'Assuming no "no thanks" is necessary: {str(ex)}')
+            Utility.log_verbose(f'Assuming no "thanks but no thanks" is necessary: {str(ex)}')
 
             return False
 
@@ -273,6 +280,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             self.browser.switch_to.parent_frame()
 
             return True
+
         except Exception as ex:
             Utility.log_verbose(f"Buy now did not work: {str(ex)}")
             self.browser.switch_to.parent_frame()
