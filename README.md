@@ -16,7 +16,7 @@ This step is necessary only on the first run.
 ```
 PS D:\CODE\FuckThisPaperLaunch> cp .\.env.sample .\.env
 ```
-Then edit the `.env` file to update these values:
+Then edit the `.env` file to update these values:  
 `NUMBER_OF_ITEMS` (How many items you're trying to buy.)  
 `ITEM_NAME_1` (Just for logging purposes.)  
 `LOGIN_EMAIL_1` (You should use separate accounts for each item you're trying to buy,)  
@@ -24,7 +24,7 @@ Then edit the `.env` file to update these values:
 `MAX_BUY_COUNT_1`  
 `MAX_COST_PER_ITEM_1`  
 Feel free to change the `ITEM_ENDPOINT_1` setting as well. There are some example endpoints in the environment file.  
-If you have more items to buy, keep editing or adding new entries for each of these configuration values that end with `2`, `3`, etc.
+If you have more items to buy, keep editing or adding new entries for each of these configuration values that are suffixed with `2`, `3`, etc.
 
 Update the `IS_TEST_RUN` value to `False` when you're happy with the settings.
 
