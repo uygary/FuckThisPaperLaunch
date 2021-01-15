@@ -18,8 +18,8 @@ PS D:\CODE\FuckThisPaperLaunch> cp .\.env.sample .\.env
 ```
 Then edit the `.env` file to update these values:
 `NUMBER_OF_ITEMS` (How many items you're trying to buy.)  
-`ITEM_NAME_1` (Just for logging purposes)  
-`LOGIN_EMAIL_1`  
+`ITEM_NAME_1` (Just for logging purposes.)  
+`LOGIN_EMAIL_1` (You should use separate accounts for each item you're trying to buy,)  
 `LOGIN_PASSWORD_1`  
 `MAX_BUY_COUNT_1`  
 `MAX_COST_PER_ITEM_1`  
