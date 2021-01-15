@@ -1,3 +1,4 @@
+import abc
 import time
 from selenium import webdriver
 from selenium.webdriver.support.wait import WebDriverWait
@@ -6,16 +7,21 @@ from selenium.webdriver.support.expected_conditions import presence_of_element_l
     element_to_be_clickable, \
     visibility_of_element_located
 from selenium.common.exceptions import NoSuchElementException
+from urllib3.exceptions import ProtocolError
+from urllib3.exceptions import MaxRetryError
+from urllib3.exceptions import NewConnectionError
+from BrowserConnectionException import BrowserConnectionException
 from SellerException import SellerException
 from Utility import Utility
 
 
-class AmazonBuyer:
+class AmazonBuyer(metaclass=abc.ABCMeta):
     CART_ENDPOINT = "/gp/cart/view.html/ref=nav_cart"
     EMPTY_CART_SELECTOR = "//div[@id='sc-active-cart']//h1[contains(text(), 'Your Amazon Cart is empty')]"
 
     def __init__(self,
                  chrome_driver_path,
+                 item_name,
                  affiliate_url,
                  item_endpoint,
                  whitelisted_sellers,
@@ -23,8 +29,11 @@ class AmazonBuyer:
                  max_buy_count,
                  buy_now_only,
                  is_test_run,
-                 timeout_in_seconds):
+                 timeout_in_seconds,
+                 item_counter,
+                 max_retry_limit):
         self.chrome_driver_path = chrome_driver_path
+        self.item_name = item_name
         self.affiliate_url = affiliate_url
         self.item_endpoint = item_endpoint
         self.whitelisted_sellers = whitelisted_sellers
@@ -33,13 +42,15 @@ class AmazonBuyer:
         self.buy_now_only = buy_now_only
         self.is_test_run = is_test_run
         self.timeout_in_seconds = timeout_in_seconds
+        self.item_counter = item_counter
 
         self.item_url = f"{affiliate_url}{item_endpoint}"
         self.cart_url = f"{affiliate_url}{AmazonBuyer.CART_ENDPOINT}"
 
         self.is_authenticated = False
-        self.current_buy_count = 0
-        self.current_total_cost = 0.00
+        
+        self.max_retry_limit = max_retry_limit
+        self.retry_counter = 0
 
         try:
             self.browser = webdriver.Chrome(self.chrome_driver_path)
@@ -49,10 +60,21 @@ class AmazonBuyer:
             Utility.log_error(f"Failed to open browser: {str(ex)}")
             raise
 
-    #def __del__(self):
-    #    self.browser.quit()
+    # Implementing both __del__ and __exit__ because I'm not sure how mature the garbage collection is under catastrophic events.
+    # I assume just __del__ would be enough, but using with nevertheless. No harm in being cautious.
+    def __del__(self):
+        self.browser.quit()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, ex_type, ex_value, ex_traceback):
+        self.browser.quit()
 
     def try_authenticate(self, login_email: str, login_password: str) -> bool:
+        if self.retry_counter == self.max_retry_limit:
+            raise BrowserConnectionException("Maximum retry limit reached!")
+
         try:
             self.browser.get(self.affiliate_url)
             self.wait.until(presence_of_element_located((By.LINK_TEXT, "Sign in")))
@@ -85,15 +107,23 @@ class AmazonBuyer:
             self.wait.until(presence_of_element_located((By.ID, "nav-item-signout")))
             Utility.log_verbose("Successfully logged in.")
             self.is_authenticated = True
-
+            
+            self.retry_counter = 0
             return True
+
+        except (ProtocolError, MaxRetryError) as cex:
+            Utility.log_error(f"Cannot connect to Chrome: {str(cex)}")
+            self.retry_counter += 1
+            return False
         except Exception as ex:
             self.is_authenticated = False
             Utility.log_error(f"Failed to log in: {str(ex)}")
-
             return False
 
     def try_buy_item(self) -> bool:
+        if self.retry_counter == self.max_retry_limit:
+            raise BrowserConnectionException("Maximum retry limit reached!")
+
         try:
             # Remove existing items from cart
             if not self.try_clear_cart():
@@ -126,6 +156,7 @@ class AmazonBuyer:
 
                 # Attempt to buy via cart
                 return self.try_purchase_via_cart()
+
         except Exception as ex:
             Utility.log_verbose(f"Failed to buy item: {str(ex)}")
             return False
@@ -152,10 +183,15 @@ class AmazonBuyer:
             self.wait.until(visibility_of_element_located(
                 (By.XPATH, AmazonBuyer.EMPTY_CART_SELECTOR)))
 
+            self.retry_counter = 0
             return True
+
+        except (ProtocolError, MaxRetryError) as cex:
+            Utility.log_error(f"Cannot connect to Chrome: {str(cex)}")
+            self.retry_counter += 1
+            return False
         except Exception as ex:
             Utility.log_warning(f"Failed to clear cart: {str(ex)}")
-
             return False
 
     def try_check_seller(self):
@@ -169,6 +205,7 @@ class AmazonBuyer:
 
             if all(seller_info not in seller for seller in self.whitelisted_sellers):
                 raise SellerException("Seller is not whitelisted.")
+
         except SellerException as sex:
             Utility.log_verbose(f"Seller is not whitelisted: {str(sex)}")
             return False
@@ -189,8 +226,9 @@ class AmazonBuyer:
             no_thanks.click()
 
             return True
+
         except Exception as ex:
-            Utility.log_verbose(f'Assuming no "no thanks" is necessary: {str(ex)}')
+            Utility.log_verbose(f'Assuming no "thanks but no thanks" is necessary: {str(ex)}')
 
             return False
 
@@ -227,18 +265,22 @@ class AmazonBuyer:
             self.wait.until(element_to_be_clickable((By.ID, "turbo-checkout-pyo-button")))
             turbo_checkout_button = self.browser.find_element_by_id("turbo-checkout-pyo-button")
 
+            # Check if the item is bought via another BuyerInterface instance.
+            if self.item_counter.get()[0] >= max_buy_count:
+                return False
+
             if self.is_test_run:
                 Utility.log_warning("Performing test run on Buy Now")
             else:
                 turbo_checkout_button.click()
 
             # If we reached this far, it should mean success
-            self.current_buy_count += 1
-            self.current_total_cost += buy_now_cost
-            Utility.log_warning(f"Purchased {self.current_buy_count} of {self.max_buy_count} via Buy Now at: {buy_now_cost}")
+            self.item_counter.increment(1, buy_now_cost)
+            Utility.log_warning(f"Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Buy Now at: {buy_now_cost}")
             self.browser.switch_to.parent_frame()
 
             return True
+
         except Exception as ex:
             Utility.log_verbose(f"Buy now did not work: {str(ex)}")
             self.browser.switch_to.parent_frame()
@@ -269,24 +311,21 @@ class AmazonBuyer:
             # Confirm order
             order_confirmation_button = self.browser.find_element_by_name("placeYourOrder1")
 
+            # Check if the item is bought via another BuyerInterface instance.
+            if self.item_counter.get()[0] >= max_buy_count:
+                return False
+
             if self.is_test_run:
                 Utility.log_warning("Performing test run on Purchase via Cart")
             else:
                 order_confirmation_button.click()
 
-            self.current_buy_count += 1
-            self.current_total_cost += add_to_cart_cost
-            Utility.log_warning(f"Purchased {self.current_buy_count} of {self.max_buy_count} via Add to Cart at: {add_to_cart_cost}")
+            self.item_counter.increment(1, add_to_cart_cost)
+            Utility.log_warning(f"Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Add to Cart at: {add_to_cart_cost}")
 
             return True
 
         except Exception as ex:
-            Utility.log_verbose(f"Failed to buy item via cart. Current stock: {self.current_buy_count} of {self.max_buy_count} at: {self.current_total_cost}. Error was: {str(ex)}")
+            Utility.log_verbose(f"Failed to buy item via cart. Current stock: {self.item_counter.get()[0]} of {self.max_buy_count} at: {self.item_counter.get()[1]}. Error was: {str(ex)}")
 
             return False
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, ex_type, ex_value, ex_traceback):
-        self.browser.quit()
