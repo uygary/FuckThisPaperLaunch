@@ -1,7 +1,7 @@
 # FuckThisPaperLaunch
 
-Shitty script for purchasing a Ryzen 9 5950X on Amazon.
-I'll eventually end up adding more integrations thanks to the paper launch.
+Shitty script for purchasing a Ryzen 9 5950X on Amazon.  
+Looks like I'll eventually end up adding more integrations thanks to the paper launch and cancelled orders due to lack of stock.
 
 None of this shit is tested that well really, and I haven't quite touched Python for 2 decades, so you're on your own if things go south.
 Keep in mind that it ignores currency, so set your prices and item links carefully.
