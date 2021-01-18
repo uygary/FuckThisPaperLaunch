@@ -46,10 +46,10 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
                                           timeout_in_seconds,
                                           is_test_run)
 
-        self.affiliate_url = os.environ.get("AMAZON_AFFILIATE_URL")
-        self.item_endpoint = os.environ.get(f"AMAZON_ITEM_ENDPOINT_{self.item_indice+1}")
-        self.whitelisted_sellers = os.environ.get("AMAZON_WHITELISTED_SELLERS").split(",")
-        self.buy_now_only = bool(strtobool(os.environ.get("AMAZON_BUY_NOW_ONLY")))
+        self.affiliate_url = Utility.get_config_value_str("AMAZON_AFFILIATE_URL")
+        self.item_endpoint = Utility.get_config_value_str(f"AMAZON_ITEM_ENDPOINT_{self.item_indice+1}")
+        self.whitelisted_sellers = Utility.get_config_value_str("AMAZON_WHITELISTED_SELLERS").split(",")
+        self.buy_now_only = Utility.get_config_value_bool("AMAZON_BUY_NOW_ONLY")
         self.item_url = f"{self.affiliate_url}{self.item_endpoint}"
         self.cart_url = f"{self.affiliate_url}{AmazonBuyer.CART_ENDPOINT}"
 
@@ -86,7 +86,7 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
 
             self.wait.until(presence_of_element_located((By.ID, "ap_email")))
             email_input = self.browser.find_element_by_id("ap_email")
-            login_email = os.environ.get(f"AMAZON_LOGIN_EMAIL_{self.item_indice+1}")
+            login_email = Utility.get_config_value_str(f"AMAZON_LOGIN_EMAIL_{self.item_indice+1}")
             email_input.send_keys(login_email)
 
             self.wait.until(presence_of_element_located((By.ID, "continue")))
@@ -96,7 +96,7 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
 
             self.wait.until(presence_of_element_located((By.ID, "ap_password")))
             password_input = self.browser.find_element_by_id("ap_password")
-            login_password = os.environ.get(f"AMAZON_LOGIN_PASSWORD_{self.item_indice+1}")
+            login_password = Utility.get_config_value_str(f"AMAZON_LOGIN_PASSWORD_{self.item_indice+1}")
             password_input.send_keys(login_password)
 
             self.wait.until(presence_of_element_located((By.NAME, "rememberMe")))

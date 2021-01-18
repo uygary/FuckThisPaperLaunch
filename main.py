@@ -4,7 +4,6 @@ import os
 import signal
 import sys
 import concurrent.futures
-from distutils.util import strtobool
 from os.path import join, dirname
 from dotenv import load_dotenv
 from Utility import Utility
@@ -21,11 +20,11 @@ load_dotenv(verbose=True)
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-IS_TEST_RUN = bool(strtobool(os.environ.get("IS_TEST_RUN")))
-TIMEOUT_IN_SECONDS = int(os.environ.get("TIMEOUT_IN_SECONDS"))
-MAX_RETRY_LIMIT = int(os.environ.get("MAX_RETRY_LIMIT"))
+IS_TEST_RUN = Utility.get_config_value_bool("IS_TEST_RUN")
+TIMEOUT_IN_SECONDS = Utility.get_config_value_int("TIMEOUT_IN_SECONDS")
+MAX_RETRY_LIMIT = Utility.get_config_value_int("MAX_RETRY_LIMIT")
 
-NUMBER_OF_ITEMS = int(os.environ.get("NUMBER_OF_ITEMS"))
+NUMBER_OF_ITEMS = Utility.get_config_value_int("NUMBER_OF_ITEMS")
 ITEM_NAMES = list[str]()
 ITEM_ENDPOINTS = list[str]()
 MAX_BUY_COUNTS = list[int]()
@@ -34,9 +33,9 @@ ITEM_COUNTERS = list[ThreadSafeCounter]()
 
 for i in range (NUMBER_OF_ITEMS):
     item_indice = i + 1    # Just to prevent counter-intuitive index in the configuration.
-    ITEM_NAMES.append(os.environ.get(f"ITEM_NAME_{item_indice}"))
-    MAX_BUY_COUNTS.append(int(os.environ.get(f"MAX_BUY_COUNT_{item_indice}")))
-    MAX_COST_PER_ITEM_LIMITS.append(float(os.environ.get(f"MAX_COST_PER_ITEM_{item_indice}")))
+    ITEM_NAMES.append(Utility.get_config_value_str(f"ITEM_NAME_{item_indice}"))
+    MAX_BUY_COUNTS.append(Utility.get_config_value_int(f"MAX_BUY_COUNT_{item_indice}"))
+    MAX_COST_PER_ITEM_LIMITS.append(Utility.get_config_value_float(f"MAX_COST_PER_ITEM_{item_indice}"))
     ITEM_COUNTERS.append(ThreadSafeCounter())
 
 if __name__ == "__main__":
