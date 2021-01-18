@@ -17,9 +17,11 @@ from BrowserConnectionException import BrowserConnectionException
 from SellerException import SellerException
 from Utility import Utility
 from ThreadSafeCounter import ThreadSafeCounter
+from BuyerInterface import BuyerInterface
 
 
-class AmazonBuyer(metaclass=abc.ABCMeta):
+@BuyerInterface.register
+class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
     BUYER_NAME = "AmazonBuyer"
     CART_ENDPOINT = "/gp/cart/view.html/ref=nav_cart"
     EMPTY_CART_SELECTOR = "//div[@id='sc-active-cart']//h1[contains(text(), 'Your Amazon Cart is empty')]"
@@ -34,27 +36,24 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
                  max_retry_limit: int,
                  timeout_in_seconds: int,
                  is_test_run: bool):
-        self.chrome_driver_path = chrome_driver_path
-        self.item_indice = item_indice
-        self.item_name = item_name
+        super(AmazonBuyer, self).__init__(chrome_driver_path,
+                                          item_indice,
+                                          item_name,
+                                          max_buy_count,
+                                          max_cost_per_item,
+                                          item_counter,
+                                          max_retry_limit,
+                                          timeout_in_seconds,
+                                          is_test_run)
+
         self.affiliate_url = os.environ.get("AMAZON_AFFILIATE_URL")
         self.item_endpoint = os.environ.get(f"AMAZON_ITEM_ENDPOINT_{self.item_indice+1}")
         self.whitelisted_sellers = os.environ.get("AMAZON_WHITELISTED_SELLERS").split(",")
-        self.max_cost_per_item = max_cost_per_item
-        self.max_buy_count = max_buy_count
         self.buy_now_only = bool(strtobool(os.environ.get("AMAZON_BUY_NOW_ONLY")))
-        self.is_test_run = is_test_run
-        self.timeout_in_seconds = timeout_in_seconds
-        self.item_counter = item_counter
-
         self.item_url = f"{self.affiliate_url}{self.item_endpoint}"
         self.cart_url = f"{self.affiliate_url}{AmazonBuyer.CART_ENDPOINT}"
 
         self.is_authenticated = False
-        
-        self.max_retry_limit = max_retry_limit
-        self.retry_counter = 0
-
         try:
             self.browser = webdriver.Chrome(self.chrome_driver_path)
             self.browser.get(self.affiliate_url)
