@@ -22,7 +22,7 @@ Then edit the `.env` file to update these values:
 `ITEM_NAME_1` (Just for logging purposes.)  
 `MAX_BUY_COUNT_1`  
 `MAX_COST_PER_ITEM_1` (his is total cost per item, including taxes and shipping. Currency is ignored.)  
-`AMAZON_LOGIN_EMAIL_1` (You should use separate accounts for each item you're trying to buy,)  
+`AMAZON_LOGIN_EMAIL_1` (You should use separate accounts for each item you're trying to buy.)  
 `AMAZON_LOGIN_PASSWORD_1`  
 Feel free to change the `AMAZON_ITEM_ENDPOINT_1` setting as well according to what you're actually trying to buy. There are some example endpoints in the environment file.  
 If you have more items to buy, keep editing and/or adding new entries for each of these configuration values that are suffixed with `2`, `3`, etc.
