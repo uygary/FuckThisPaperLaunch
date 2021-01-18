@@ -27,7 +27,7 @@ Then edit the `.env` file to update these values:
 Feel free to change the `AMAZON_ITEM_ENDPOINT_1` setting as well according to what you're actually trying to buy. There are some example endpoints in the environment file.  
 If you have more items to buy, keep editing and/or adding new entries for each of these configuration values that are suffixed with `2`, `3`, etc.
 
-Update the `IS_TEST_RUN` value to `False` when you're happy with the settings.
+Update the `IS_TEST_RUN` value to `False` when you're happy with the settings.  The script will not actually buy anything as long as this is set to `True`.
 
 ## Set Chrome driver version
 Modify the `chromedriver-py` version in `requirements.txt` to match your Chrome version.
@@ -58,4 +58,4 @@ PS D:\CODE\FuckThisPaperLaunch> .\start.ps1
 This will simply run the script.
 Of course you could just use PyCharm Community Edition or Visual Studio to run this if you wanna fiddle around with the code and debug it.
 
-In order to stop the bot, just press CRTL+C and wait for it to shut itself down, disposing the browser connections.  It will take some time, but I suspect it might be safer to wait for it to do its thing. Since I'm not really familiar with the native driver, I'm not really sure whether it leaks or not otherwise.
+In order to stop the bot, just press `CRTL`+`C` and wait for it to shut itself down, disposing the browser connections.  It will take some time, but I suspect it might be safer to wait for it to do its thing. Since I'm not really familiar with the native driver, I'm not really sure whether it leaks or not otherwise.
