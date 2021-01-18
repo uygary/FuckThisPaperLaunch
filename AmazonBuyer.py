@@ -1,5 +1,8 @@
 import abc
 import time
+import os
+from distutils.util import strtobool
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -13,39 +16,39 @@ from urllib3.exceptions import NewConnectionError
 from BrowserConnectionException import BrowserConnectionException
 from SellerException import SellerException
 from Utility import Utility
+from ThreadSafeCounter import ThreadSafeCounter
 
 
 class AmazonBuyer(metaclass=abc.ABCMeta):
+    BUYER_NAME = "AmazonBuyer"
     CART_ENDPOINT = "/gp/cart/view.html/ref=nav_cart"
     EMPTY_CART_SELECTOR = "//div[@id='sc-active-cart']//h1[contains(text(), 'Your Amazon Cart is empty')]"
 
     def __init__(self,
-                 chrome_driver_path,
-                 item_name,
-                 affiliate_url,
-                 item_endpoint,
-                 whitelisted_sellers,
-                 max_cost_per_item,
-                 max_buy_count,
-                 buy_now_only,
-                 is_test_run,
-                 timeout_in_seconds,
-                 item_counter,
-                 max_retry_limit):
+                 chrome_driver_path: str,
+                 item_indice : int,
+                 item_name: str,
+                 max_buy_count: int,
+                 max_cost_per_item: float,
+                 item_counter: ThreadSafeCounter,
+                 max_retry_limit: int,
+                 timeout_in_seconds: int,
+                 is_test_run: bool):
         self.chrome_driver_path = chrome_driver_path
+        self.item_indice = item_indice
         self.item_name = item_name
-        self.affiliate_url = affiliate_url
-        self.item_endpoint = item_endpoint
-        self.whitelisted_sellers = whitelisted_sellers
+        self.affiliate_url = os.environ.get("AMAZON_AFFILIATE_URL")
+        self.item_endpoint = os.environ.get(f"AMAZON_ITEM_ENDPOINT_{self.item_indice+1}")
+        self.whitelisted_sellers = os.environ.get("AMAZON_WHITELISTED_SELLERS").split(",")
         self.max_cost_per_item = max_cost_per_item
         self.max_buy_count = max_buy_count
-        self.buy_now_only = buy_now_only
+        self.buy_now_only = bool(strtobool(os.environ.get("AMAZON_BUY_NOW_ONLY")))
         self.is_test_run = is_test_run
         self.timeout_in_seconds = timeout_in_seconds
         self.item_counter = item_counter
 
-        self.item_url = f"{affiliate_url}{item_endpoint}"
-        self.cart_url = f"{affiliate_url}{AmazonBuyer.CART_ENDPOINT}"
+        self.item_url = f"{self.affiliate_url}{self.item_endpoint}"
+        self.cart_url = f"{self.affiliate_url}{AmazonBuyer.CART_ENDPOINT}"
 
         self.is_authenticated = False
         
@@ -71,7 +74,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
     def __exit__(self, ex_type, ex_value, ex_traceback):
         self.browser.quit()
 
-    def try_authenticate(self, login_email: str, login_password: str) -> bool:
+    def try_authenticate(self) -> bool:
         if self.retry_counter == self.max_retry_limit:
             raise BrowserConnectionException("Maximum retry limit reached!")
 
@@ -84,6 +87,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
 
             self.wait.until(presence_of_element_located((By.ID, "ap_email")))
             email_input = self.browser.find_element_by_id("ap_email")
+            login_email = os.environ.get(f"AMAZON_LOGIN_EMAIL_{self.item_indice+1}")
             email_input.send_keys(login_email)
 
             self.wait.until(presence_of_element_located((By.ID, "continue")))
@@ -93,6 +97,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
 
             self.wait.until(presence_of_element_located((By.ID, "ap_password")))
             password_input = self.browser.find_element_by_id("ap_password")
+            login_password = os.environ.get(f"AMAZON_LOGIN_PASSWORD_{self.item_indice+1}")
             password_input.send_keys(login_password)
 
             self.wait.until(presence_of_element_located((By.NAME, "rememberMe")))
@@ -161,7 +166,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             Utility.log_verbose(f"Failed to buy item: {str(ex)}")
             return False
 
-    def try_clear_cart(self):
+    def try_clear_cart(self) -> bool:
         try:
             self.browser.get(self.cart_url)
             existing_cart_items_container = self.browser.find_element_by_id("activeCartViewForm")
@@ -195,7 +200,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             Utility.log_warning(f"Failed to clear cart: {str(ex)}")
             return False
 
-    def try_check_seller(self):
+    def try_check_seller(self) -> bool:
         try:
             # Check if there are any whitelist rules defined
             if len(self.whitelisted_sellers) == 0:
@@ -218,7 +223,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
             #raise
             return False    # We don't want to go ahead by an unwanted seller by mistake.
 
-    def try_reject_additional_warranty(self):
+    def try_reject_additional_warranty(self) -> bool:
         try:
             self.wait.until(presence_of_element_located((By.ID, "siNoCoverage-announce")))
             self.wait.until(visibility_of_element_located((By.ID, "siNoCoverage-announce")))
@@ -233,7 +238,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
 
             return False
 
-    def try_buy_now(self):
+    def try_buy_now(self) -> bool:
         try:
             #self.wait.until(presence_of_element_located((By.ID, "buy-now-button")))
             #self.wait.until(visibility_of_element_located((By.ID, "buy-now-button")))
@@ -288,7 +293,7 @@ class AmazonBuyer(metaclass=abc.ABCMeta):
 
             return False
 
-    def try_purchase_via_cart(self):
+    def try_purchase_via_cart(self) -> bool:
         try:
             add_to_cart_button = self.browser.find_element_by_id("add-to-cart-button")
             add_to_cart_button.click()
