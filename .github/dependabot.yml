@@ -9,6 +9,5 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
-    ignored_updates:
-      - match:
-          dependency_name: "chromedriver-py"
+    ignore:
+      - dependency_name: "chromedriver-py"
