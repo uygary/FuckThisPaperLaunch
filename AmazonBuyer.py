@@ -20,6 +20,7 @@ from ThreadSafeCounter import ThreadSafeCounter
 from BuyerInterface import BuyerInterface
 
 
+# TODO: Need to read through and sort these out.
 @BuyerInterface.register
 class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
     BUYER_NAME = "AmazonBuyer"
