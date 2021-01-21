@@ -89,8 +89,6 @@ if __name__ == "__main__":
 
             def execute_purchase(purchase_processor):
                 while not is_shutting_down and purchase_processor.item_counter.get()[0] < purchase_processor.max_buy_count:
-                    Utility.log_information(f"Current stock of {purchase_processor.item_name}: {purchase_processor.item_counter.get()[0]} of {purchase_processor.max_buy_count}.")
-
                     try:
                         is_item_bought = purchase_processor.process_purchase()
                         if is_item_bought:
