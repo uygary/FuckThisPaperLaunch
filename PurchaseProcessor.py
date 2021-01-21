@@ -1,3 +1,4 @@
+import time
 from Utility import Utility
 from DisposableList import DisposableList
 from ThreadSafeCounter import ThreadSafeCounter
@@ -16,7 +17,7 @@ class PurchaseProcessor():
                  max_retry_limit: int,
                  timeout_in_seconds: int,
                  is_test_run: bool,
-                 *buyer_implementations: BuyerInterface):
+                 *buyer_implementations: [BuyerInterface]):
         #return super().__init__(*args, **kwargs)
         self.item_indice = item_indice
         self.item_name = item_name

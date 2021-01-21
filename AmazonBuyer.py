@@ -60,7 +60,7 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             self.browser.get(self.affiliate_url)
             self.wait = WebDriverWait(self.browser, self.timeout_in_seconds)
         except Exception as ex:
-            Utility.log_error(f"Failed to open browser: {str(ex)}")
+            Utility.log_error(f"{AmazonBuyer.BUYER_NAME}::Failed to open browser: {str(ex)}")
             raise
 
     # Implementing both __del__ and __exit__ because I'm not sure how mature the garbage collection is under catastrophic events.
@@ -110,19 +110,19 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             continue_button.click()
 
             self.wait.until(presence_of_element_located((By.ID, "nav-item-signout")))
-            Utility.log_verbose("Successfully logged in.")
+            Utility.log_verbose(f"{AmazonBuyer.BUYER_NAME}::Successfully logged in for {self.item_name}.")
             self.is_authenticated = True
             
             self.retry_counter = 0
             return True
 
         except (ProtocolError, MaxRetryError) as cex:
-            Utility.log_error(f"Cannot connect to Chrome: {str(cex)}")
+            Utility.log_error(f"{AmazonBuyer.BUYER_NAME}::Cannot connect to Chrome: {str(cex)}")
             self.retry_counter += 1
             return False
         except Exception as ex:
             self.is_authenticated = False
-            Utility.log_error(f"Failed to log in: {str(ex)}")
+            Utility.log_error(f"{AmazonBuyer.BUYER_NAME}::Failed to log in: {str(ex)}")
             return False
 
     def try_buy_item(self) -> bool:
@@ -163,7 +163,7 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
                 return self.try_purchase_via_cart()
 
         except Exception as ex:
-            Utility.log_verbose(f"Failed to buy item: {str(ex)}")
+            Utility.log_verbose(f"{AmazonBuyer.BUYER_NAME}::Failed to buy item: {str(ex)}")
             return False
 
     def try_clear_cart(self) -> bool:
@@ -193,11 +193,11 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             return True
 
         except (ProtocolError, MaxRetryError) as cex:
-            Utility.log_error(f"Cannot connect to Chrome: {str(cex)}")
+            Utility.log_error(f"{AmazonBuyer.BUYER_NAME}::Cannot connect to Chrome: {str(cex)}")
             self.retry_counter += 1
             return False
         except Exception as ex:
-            Utility.log_warning(f"Failed to clear cart: {str(ex)}")
+            Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Failed to clear cart: {str(ex)}")
             return False
 
     def try_check_seller(self) -> bool:
@@ -212,16 +212,17 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             if all(seller_info not in seller for seller in self.whitelisted_sellers):
                 raise SellerException("Seller is not whitelisted.")
 
+            return True
+
         except SellerException as sex:
-            Utility.log_verbose(f"Seller is not whitelisted: {str(sex)}")
+            Utility.log_information(f"{AmazonBuyer.BUYER_NAME}::Seller is not whitelisted: {str(sex)}")
             return False
         except NoSuchElementException as nex:
-            Utility.log_verbose(f"Seller info not found. Assuming Amazon: {str(nex)}")
+            Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Seller info not found. Assuming Amazon: {str(nex)}")
             return True
         except Exception as ex:
-            Utility.log_error(f"Error occurred while trying to determine the seller: {str(ex)}")
-            #raise
-            return False    # We don't want to go ahead by an unwanted seller by mistake.
+            Utility.log_error(f"{AmazonBuyer.BUYER_NAME}::Error occurred while trying to determine the seller: {str(ex)}")
+            return False
 
     def try_reject_additional_warranty(self) -> bool:
         try:
@@ -234,7 +235,7 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             return True
 
         except Exception as ex:
-            Utility.log_verbose(f'Assuming no "thanks but no thanks" is necessary: {str(ex)}')
+            Utility.log_verbose(f'{AmazonBuyer.BUYER_NAME}::Assuming no "thanks but no thanks" is necessary: {str(ex)}')
 
             return False
 
@@ -261,7 +262,7 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
 
             buy_now_cost = Utility.parse_price_string(buy_now_price_text)
             if buy_now_cost > self.max_cost_per_item:
-                Utility.log_information(f"Buy now price is too high: {buy_now_cost} instead of {self.max_cost_per_item}")
+                Utility.log_information(f"{AmazonBuyer.BUYER_NAME}::Buy now price is too high: {buy_now_cost} instead of {self.max_cost_per_item}")
                 self.browser.switch_to.parent_frame()
 
                 return False
@@ -276,19 +277,19 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
                 return False
 
             if self.is_test_run:
-                Utility.log_warning("Performing test run on Buy Now")
+                Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Performing test run on Buy Now")
             else:
                 turbo_checkout_button.click()
 
             # If we reached this far, it should mean success
             self.item_counter.increment(1, buy_now_cost)
-            Utility.log_warning(f"Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Buy Now at: {buy_now_cost}")
+            Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Buy Now at: {buy_now_cost}")
             self.browser.switch_to.parent_frame()
 
             return True
 
         except Exception as ex:
-            Utility.log_verbose(f"Buy now did not work: {str(ex)}")
+            Utility.log_verbose(f"{AmazonBuyer.BUYER_NAME}::Buy now did not work: {str(ex)}")
             self.browser.switch_to.parent_frame()
 
             return False
@@ -297,7 +298,7 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
         try:
             add_to_cart_button = self.browser.find_element_by_id("add-to-cart-button")
             add_to_cart_button.click()
-            time.sleep(2)
+            time.sleep(self.timeout_in_seconds)
 
             self.try_reject_additional_warranty()
 
@@ -310,7 +311,7 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             price_info = self.browser.find_element_by_css_selector("td.grand-total-price").text
             add_to_cart_cost = Utility.parse_price_string(price_info)
             if add_to_cart_cost > self.max_cost_per_item:
-                Utility.log_information(f"Add to cart price is too high: {add_to_cart_cost} instead of {self.max_cost_per_item}")
+                Utility.log_information(f"{AmazonBuyer.BUYER_NAME}::Add to cart price is too high: {add_to_cart_cost} instead of {self.max_cost_per_item}")
 
                 return False
 
@@ -322,16 +323,16 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
                 return False
 
             if self.is_test_run:
-                Utility.log_warning("Performing test run on Purchase via Cart")
+                Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Performing test run on Purchase via Cart")
             else:
                 order_confirmation_button.click()
 
             self.item_counter.increment(1, add_to_cart_cost)
-            Utility.log_warning(f"Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Add to Cart at: {add_to_cart_cost}")
+            Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Add to Cart at: {add_to_cart_cost}")
 
             return True
 
         except Exception as ex:
-            Utility.log_verbose(f"Failed to buy item via cart. Current stock: {self.item_counter.get()[0]} of {self.max_buy_count} at: {self.item_counter.get()[1]}. Error was: {str(ex)}")
+            Utility.log_verbose(f"{AmazonBuyer.BUYER_NAME}::Failed to buy item via cart. Current stock: {self.item_counter.get()[0]} of {self.max_buy_count} at: {self.item_counter.get()[1]}. Error was: {str(ex)}")
 
             return False

@@ -11,9 +11,11 @@ from DisposableList import DisposableList
 from ThreadSafeCounter import ThreadSafeCounter
 from BuyerInterface import BuyerInterface
 from AmazonBuyer import AmazonBuyer
+from WalmartBuyer import WalmartBuyer
 from PurchaseProcessor import PurchaseProcessor
 from chromedriver_py import binary_path as chrome_driver_path
 from BrowserConnectionException import BrowserConnectionException
+from pydoc import locate
 
 
 load_dotenv(verbose=True)
@@ -30,6 +32,8 @@ ITEM_ENDPOINTS = list[str]()
 MAX_BUY_COUNTS = list[int]()
 MAX_COST_PER_ITEM_LIMITS = list[float]()
 ITEM_COUNTERS = list[ThreadSafeCounter]()
+
+ENABLED_BUYERS = Utility.get_config_value_str("ENABLED_BUYERS").split(",")
 
 for i in range (NUMBER_OF_ITEMS):
     item_indice = i + 1    # Just to prevent counter-intuitive index in the configuration.
@@ -57,6 +61,12 @@ if __name__ == "__main__":
 
         # This still needs a lot of work. Is it worth investing in?
         BuyerInterface.register(AmazonBuyer)
+        BuyerInterface.register(WalmartBuyer)
+
+        enabled_buyer_implementations = []
+        for enabled_buyer in ENABLED_BUYERS:
+            if enabled_buyer:
+                enabled_buyer_implementations.append(locate(f"{enabled_buyer}.{enabled_buyer}"))
 
         # Launch browsers
         with DisposableList[PurchaseProcessor]() as purchase_processors:
@@ -70,7 +80,7 @@ if __name__ == "__main__":
                                                        MAX_RETRY_LIMIT,
                                                        TIMEOUT_IN_SECONDS,
                                                        IS_TEST_RUN,
-                                                       *[AmazonBuyer])
+                                                       *enabled_buyer_implementations)
                 purchase_processors.append(purchase_processor)
 
             for purchase_processor in purchase_processors:
@@ -85,7 +95,7 @@ if __name__ == "__main__":
                         is_item_bought = purchase_processor.process_purchase()
                         if is_item_bought:
                             Utility.beep()
-                            time.sleep(2 * TIMEOUT_IN_SECONDS)  # Need to add purchase success detection.
+                            time.sleep(2 * TIMEOUT_IN_SECONDS)  # Really need to add proper purchase success detection across buyers.
                         else:
                             time.sleep(TIMEOUT_IN_SECONDS)
                     except BrowserConnectionException as cex:
