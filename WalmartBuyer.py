@@ -15,7 +15,6 @@ from urllib3.exceptions import ProtocolError
 from urllib3.exceptions import MaxRetryError
 from urllib3.exceptions import NewConnectionError
 from BrowserConnectionException import BrowserConnectionException
-from SellerException import SellerException
 from Utility import Utility
 from ThreadSafeCounter import ThreadSafeCounter
 from BuyerInterface import BuyerInterface
@@ -112,6 +111,7 @@ class WalmartBuyer(BuyerInterface, metaclass=abc.ABCMeta):
 
         except (ProtocolError, MaxRetryError) as cex:
             Utility.log_error(f"{WalmartBuyer.BUYER_NAME}::Cannot connect to Chrome: {str(cex)}")
+            self.is_authenticated = False
             self.retry_counter += 1
             return False
         except Exception as ex:
@@ -179,13 +179,11 @@ class WalmartBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             seller_info = seller_info_container.get_attribute("innerText")
 
             if all(seller_info not in seller for seller in self.whitelisted_sellers):
-                raise SellerException("Seller is not whitelisted.")
+                Utility.log_information(f"{WalmartBuyer.BUYER_NAME}::Seller is not whitelisted: {seller_info}")
+                return False
 
             return True
 
-        except SellerException as sex:
-            Utility.log_information(f"{WalmartBuyer.BUYER_NAME}::Seller is not whitelisted: {str(sex)}")
-            return False
         except Exception as ex:
             Utility.log_error(f"{WalmartBuyer.BUYER_NAME}::Error occurred while trying to determine the seller: {str(ex)}")
             return False
@@ -203,10 +201,8 @@ class WalmartBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             proceed_to_checkout_button = self.browser.find_element_by_xpath(WalmartBuyer.PROCEEED_TO_CHECKOUT_SELECTOR)
             proceed_to_checkout_button.click()
             
-            self.wait.until(presence_of_element_located(
-                (By.XPATH, WalmartBuyer.TOTAL_COST_SELECTOR)))
-            self.wait.until(visibility_of_element_located(
-                (By.XPATH, WalmartBuyer.TOTAL_COST_SELECTOR)))
+            self.wait.until(presence_of_element_located((By.XPATH, WalmartBuyer.TOTAL_COST_SELECTOR)))
+            self.wait.until(visibility_of_element_located((By.XPATH, WalmartBuyer.TOTAL_COST_SELECTOR)))
             
             # Check price
             price_info = self.browser.find_element_by_xpath(WalmartBuyer.TOTAL_COST_SELECTOR).text
@@ -215,13 +211,13 @@ class WalmartBuyer(BuyerInterface, metaclass=abc.ABCMeta):
                 Utility.log_information(f"{WalmartBuyer.BUYER_NAME}::Total price is too high: {total_cost} instead of {self.max_cost_per_item}")
                 return False
             
+            checkout_button = self.browser.find_element_by_xpath(WalmartBuyer.CHECKOUT_BUTTON_SELECTOR)
+
             # Check if the item is already bought.
             if self.item_counter.get()[0] >= max_buy_count:
                 return False
 
             # Purchase
-            checkout_button = self.browser.find_element_by_xpath(WalmartBuyer.CHECKOUT_BUTTON_SELECTOR)
-
             if self.is_test_run:
                 Utility.log_warning(f"{WalmartBuyer.BUYER_NAME}::Performing test run on Purchase via Cart")
             else:

@@ -14,7 +14,6 @@ from urllib3.exceptions import ProtocolError
 from urllib3.exceptions import MaxRetryError
 from urllib3.exceptions import NewConnectionError
 from BrowserConnectionException import BrowserConnectionException
-from SellerException import SellerException
 from Utility import Utility
 from ThreadSafeCounter import ThreadSafeCounter
 from BuyerInterface import BuyerInterface
@@ -118,6 +117,7 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
 
         except (ProtocolError, MaxRetryError) as cex:
             Utility.log_error(f"{AmazonBuyer.BUYER_NAME}::Cannot connect to Chrome: {str(cex)}")
+            self.is_authenticated = False
             self.retry_counter += 1
             return False
         except Exception as ex:
@@ -210,13 +210,11 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             seller_info = seller_info_container.get_attribute("innerText")
 
             if all(seller_info not in seller for seller in self.whitelisted_sellers):
-                raise SellerException("Seller is not whitelisted.")
+                Utility.log_information(f"{AmazonBuyer.BUYER_NAME}::Seller is not whitelisted: {seller_info}")
+                return False
 
             return True
 
-        except SellerException as sex:
-            Utility.log_information(f"{AmazonBuyer.BUYER_NAME}::Seller is not whitelisted: {str(sex)}")
-            return False
         except NoSuchElementException as nex:
             Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Seller info not found. Assuming Amazon: {str(nex)}")
             return True

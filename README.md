@@ -20,6 +20,8 @@ PS D:\CODE\FuckThisPaperLaunch> cp .\.env.sample .\.env
 Then edit the `.env` file to update these values:  
 `NUMBER_OF_ITEMS` (How many items you're trying to buy.)  
 `ENABLED_BUYERS` This is a comma separated list of buyers we want running. Currently valid values are: `AmazonBuyer` and `WalmartBuyer`  
+We default to Amazon only. If you want to try WalmartBuyer as well, you'll need to raise the `TIMEOUT_IN_SECONDS` setting to some crazy high value just for a glimmer of hope to avoide the aggressive captcha challenges.  
+`NeweggBuyer` is currently being worked on as well, but I feel uneasy about that particular integration since Newegg keeps asking for the fucking CVV2 code.  
 
 `ITEM_NAME_1` (Just for logging purposes.)  
 `MAX_BUY_COUNT_1`  

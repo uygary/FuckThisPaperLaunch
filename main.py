@@ -11,6 +11,7 @@ from DisposableList import DisposableList
 from ThreadSafeCounter import ThreadSafeCounter
 from BuyerInterface import BuyerInterface
 from AmazonBuyer import AmazonBuyer
+from NeweggBuyer import NeweggBuyer
 from WalmartBuyer import WalmartBuyer
 from PurchaseProcessor import PurchaseProcessor
 from chromedriver_py import binary_path as chrome_driver_path
@@ -61,6 +62,7 @@ if __name__ == "__main__":
 
         # This still needs a lot of work. Is it worth investing in?
         BuyerInterface.register(AmazonBuyer)
+        BuyerInterface.register(NeweggBuyer)
         BuyerInterface.register(WalmartBuyer)
 
         enabled_buyer_implementations = []
