@@ -1,4 +1,6 @@
 from datetime import datetime
+from distutils.util import strtobool
+import os
 
 
 class TerminalColors:
@@ -49,3 +51,19 @@ class Utility:
     @staticmethod
     def beep():
         print("\a")
+
+    @staticmethod
+    def get_config_value_str(config_key):
+        return os.environ.get(config_key)
+
+    @staticmethod
+    def get_config_value_int(config_key):
+        return int(os.environ.get(config_key))
+
+    @staticmethod
+    def get_config_value_float(config_key):
+        return float(os.environ.get(config_key))
+
+    @staticmethod
+    def get_config_value_bool(config_key):
+        return bool(strtobool(os.environ.get(config_key)))

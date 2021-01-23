@@ -4,7 +4,6 @@ import os
 import signal
 import sys
 import concurrent.futures
-from distutils.util import strtobool
 from os.path import join, dirname
 from dotenv import load_dotenv
 from Utility import Utility
@@ -12,38 +11,36 @@ from DisposableList import DisposableList
 from ThreadSafeCounter import ThreadSafeCounter
 from BuyerInterface import BuyerInterface
 from AmazonBuyer import AmazonBuyer
+from NeweggBuyer import NeweggBuyer
+from WalmartBuyer import WalmartBuyer
+from PurchaseProcessor import PurchaseProcessor
 from chromedriver_py import binary_path as chrome_driver_path
 from BrowserConnectionException import BrowserConnectionException
+from pydoc import locate
 
 
 load_dotenv(verbose=True)
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-AFFILIATE_URL = os.environ.get("AFFILIATE_URL")
-WHITELISTED_SELLERS = os.environ.get("WHITELISTED_SELLERS").split(",")
-BUY_NOW_ONLY = bool(strtobool(os.environ.get("BUY_NOW_ONLY")))
-IS_TEST_RUN = bool(strtobool(os.environ.get("IS_TEST_RUN")))
-TIMEOUT_IN_SECONDS = int(os.environ.get("TIMEOUT_IN_SECONDS"))
-MAX_RETRY_LIMIT = int(os.environ.get("MAX_RETRY_LIMIT"))
+IS_TEST_RUN = Utility.get_config_value_bool("IS_TEST_RUN")
+TIMEOUT_IN_SECONDS = Utility.get_config_value_int("TIMEOUT_IN_SECONDS")
+MAX_RETRY_LIMIT = Utility.get_config_value_int("MAX_RETRY_LIMIT")
 
-NUMBER_OF_ITEMS = int(os.environ.get("NUMBER_OF_ITEMS"))
+NUMBER_OF_ITEMS = Utility.get_config_value_int("NUMBER_OF_ITEMS")
 ITEM_NAMES = list[str]()
-LOGIN_EMAILS = list[str]()
-LOGIN_PASSWORDS = list[str]()
 ITEM_ENDPOINTS = list[str]()
 MAX_BUY_COUNTS = list[int]()
 MAX_COST_PER_ITEM_LIMITS = list[float]()
 ITEM_COUNTERS = list[ThreadSafeCounter]()
 
+ENABLED_BUYERS = Utility.get_config_value_str("ENABLED_BUYERS").split(",")
+
 for i in range (NUMBER_OF_ITEMS):
     item_indice = i + 1    # Just to prevent counter-intuitive index in the configuration.
-    ITEM_NAMES.append(os.environ.get(f"ITEM_NAME_{item_indice}"))
-    LOGIN_EMAILS.append(os.environ.get(f"LOGIN_EMAIL_{item_indice}"))
-    LOGIN_PASSWORDS.append(os.environ.get(f"LOGIN_PASSWORD_{item_indice}"))
-    ITEM_ENDPOINTS.append(os.environ.get(f"ITEM_ENDPOINT_{item_indice}"))
-    MAX_BUY_COUNTS.append(int(os.environ.get(f"MAX_BUY_COUNT_{item_indice}")))
-    MAX_COST_PER_ITEM_LIMITS.append(float(os.environ.get(f"MAX_COST_PER_ITEM_{item_indice}")))
+    ITEM_NAMES.append(Utility.get_config_value_str(f"ITEM_NAME_{item_indice}"))
+    MAX_BUY_COUNTS.append(Utility.get_config_value_int(f"MAX_BUY_COUNT_{item_indice}"))
+    MAX_COST_PER_ITEM_LIMITS.append(Utility.get_config_value_float(f"MAX_COST_PER_ITEM_{item_indice}"))
     ITEM_COUNTERS.append(ThreadSafeCounter())
 
 if __name__ == "__main__":
@@ -53,6 +50,8 @@ if __name__ == "__main__":
         # For semi-gracefully handling CTRL+C
         def break_handler(sig, frame):
             is_shutting_down = True
+            for purchase_processor in purchase_processors:
+                purchase_processor.is_shutting_down = True
             
         # Check out if we can trigger this without waiting for futures to complete.
         signal.signal(signal.SIGINT, break_handler)
@@ -63,54 +62,45 @@ if __name__ == "__main__":
 
         # This still needs a lot of work. Is it worth investing in?
         BuyerInterface.register(AmazonBuyer)
+        BuyerInterface.register(NeweggBuyer)
+        BuyerInterface.register(WalmartBuyer)
+
+        enabled_buyer_implementations = []
+        for enabled_buyer in ENABLED_BUYERS:
+            if enabled_buyer:
+                enabled_buyer_implementations.append(locate(f"{enabled_buyer}.{enabled_buyer}"))
 
         # Launch browsers
-        with DisposableList[BuyerInterface]() as buyers:
+        with DisposableList[PurchaseProcessor]() as purchase_processors:
             for i in range (NUMBER_OF_ITEMS):
-                amazon_buyer = AmazonBuyer(chrome_driver_path,
-                                   ITEM_NAMES[i],
-                                   AFFILIATE_URL,
-                                   ITEM_ENDPOINTS[i],
-                                   WHITELISTED_SELLERS,
-                                   MAX_COST_PER_ITEM_LIMITS[i],
-                                   MAX_BUY_COUNTS[i],
-                                   BUY_NOW_ONLY,
-                                   IS_TEST_RUN,
-                                   TIMEOUT_IN_SECONDS,
-                                   ITEM_COUNTERS[i],
-                                   MAX_RETRY_LIMIT)
-                
-                buyers.append(amazon_buyer)
+                purchase_processor = PurchaseProcessor(chrome_driver_path,
+                                                       i,
+                                                       ITEM_NAMES[i],
+                                                       MAX_BUY_COUNTS[i],
+                                                       MAX_COST_PER_ITEM_LIMITS[i],
+                                                       ITEM_COUNTERS[i],
+                                                       MAX_RETRY_LIMIT,
+                                                       TIMEOUT_IN_SECONDS,
+                                                       IS_TEST_RUN,
+                                                       *enabled_buyer_implementations)
+                purchase_processors.append(purchase_processor)
 
-            # Authenticate
-            for i in range (len(buyers)):
-                buyer = buyers[i]
-                while not is_shutting_down and not buyer.is_authenticated:
-                    is_authenticated = buyer.try_authenticate(LOGIN_EMAILS[i], LOGIN_PASSWORDS[i])
-                    if is_authenticated:
-                        break
-                    else:
-                        time.sleep(TIMEOUT_IN_SECONDS)
+            for purchase_processor in purchase_processors:
+                if not is_shutting_down:
+                    purchase_processor.initialize_buyers()
 
-            def execute_buyer(buyer):
-                while not is_shutting_down and buyer.item_counter.get()[0] < buyer.max_buy_count:
-                    Utility.log_information(f"Current stock on buyer: {buyer.item_counter.get()[0]} of {buyer.max_buy_count}.")
-
+            def execute_purchase(purchase_processor):
+                while not is_shutting_down and purchase_processor.item_counter.get()[0] < purchase_processor.max_buy_count:
                     try:
-                        # Inventory check
-                        is_item_bought = buyer.try_buy_item()
-                        if is_item_bought:
-                            Utility.beep()
-                            time.sleep(2 * TIMEOUT_IN_SECONDS)  # Need to add purchase success detection.
-                        else:
-                            time.sleep(TIMEOUT_IN_SECONDS)
+                        purchase_processor.process_purchase()
                     except BrowserConnectionException as cex:
-                        Utility.log_error(f"Buyer faced fatal error trying to purchase {buyer.item_name}: {str(cex)}")
+                        Utility.log_error(f"Buyer faced fatal error trying to purchase {purchase_processor.item_name}: {str(cex)}")
                         raise
 
             # Buy loops
-            with concurrent.futures.ThreadPoolExecutor(len(buyers)) as executor:
-                executor.map(execute_buyer, buyers)
+            if not is_shutting_down:
+                with concurrent.futures.ThreadPoolExecutor(len(purchase_processors)) as executor:
+                    executor.map(execute_purchase, purchase_processors)
                     
             for i in range(NUMBER_OF_ITEMS):
                 current_purchase = ITEM_COUNTERS[i].get()

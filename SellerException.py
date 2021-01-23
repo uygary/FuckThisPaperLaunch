@@ -1,2 +1,0 @@
-class SellerException(Exception):
-    pass
