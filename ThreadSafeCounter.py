@@ -1,6 +1,7 @@
 import threading
 
 
+# TODO: Properly use this via with as well.
 class ThreadSafeCounter(object):
     def __init__(self):
         self._count = 0
