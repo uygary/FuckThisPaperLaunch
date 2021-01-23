@@ -7,6 +7,7 @@ None of this shit is tested that well really, and I haven't quite touched Python
 Keep in mind that it ignores currency, so set your prices and item links carefully.
 Since I work with PowerShell, the scripts and these instructions are based on that, but of course you could use any shell you want in order to run this.  
 There's a bunch of issues around break handling. And still more refactor to do around multiple buyer implementations.
+One note up front: However many items you want to purchase, you'll need that many accounts on each platform you're going to enable.
 
 ---
 
@@ -20,13 +21,13 @@ PS D:\CODE\FuckThisPaperLaunch> cp .\.env.sample .\.env
 Then edit the `.env` file to update these values:  
 `NUMBER_OF_ITEMS` (How many items you're trying to buy.)  
 `ENABLED_BUYERS` This is a comma separated list of buyers we want running. Currently valid values are: `AmazonBuyer`, `NeweggBuyer` and `WalmartBuyer`  
-We default to Amazon and Newegg only. If you want to try WalmartBuyer as well, you'll probably need to raise the `WALMART_STOCK_CHECK_MIN_WAIT_IN_SECONDS` setting to some crazy high value just for a glimmer of hope to avoid the aggressive captcha challenges.  
+We default to Amazon and Newegg only. If you want to try WalmartBuyer as well, you'll probably need to raise the `WALMART_STOCK_CHECK_MIN_WAIT_IN_SECONDS` setting to some crazy high value just for a glimmer of hope of avoiding the aggressive captcha challenges.  
 `NeweggBuyer` is currently being worked on as well, but I feel uneasy about that particular integration since Newegg keeps asking for the fucking CVV2 code.  
 
 `ITEM_NAME_1` (Just for logging purposes.)  
 `MAX_BUY_COUNT_1`  
-`MAX_COST_PER_ITEM_1` (his is total cost per item, including taxes and shipping. Beware: Currency is ignored.)  
-`AMAZON_LOGIN_EMAIL_1` (You should use separate accounts for each item you're trying to buy.)  
+`MAX_COST_PER_ITEM_1` (This is total cost per item, including taxes and shipping. Beware: Currency is ignored.)  
+`AMAZON_LOGIN_EMAIL_1` (As stated above, you should use separate accounts for each item you're trying to buy.)  
 `AMAZON_LOGIN_PASSWORD_1`  
 Feel free to change the `AMAZON_ITEM_ENDPOINT_1` setting as well according to what you're actually trying to buy. There are some example endpoints in the environment file.  
 If you have more items to buy, keep editing and/or adding new entries for each of these configuration values that are suffixed with `2`, `3`, etc.  
