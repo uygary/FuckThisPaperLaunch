@@ -1,6 +1,6 @@
 # FuckThisPaperLaunch
 
-Shitty script for purchasing a Ryzen 9 5950X on Amazon.  
+Shitty script for purchasing a Ryzen 9 5950X on Amazon. (And optionally Newegg or Walmart)  
 Looks like I'll eventually end up adding more integrations thanks to the paper launch and cancelled orders due to lack of stock.
 
 None of this shit is tested that well really, and I haven't quite touched Python for 2 decades, so you're on your own if things go south.
@@ -20,7 +20,7 @@ PS D:\CODE\FuckThisPaperLaunch> cp .\.env.sample .\.env
 Then edit the `.env` file to update these values:  
 `NUMBER_OF_ITEMS` (How many items you're trying to buy.)  
 `ENABLED_BUYERS` This is a comma separated list of buyers we want running. Currently valid values are: `AmazonBuyer`, `NeweggBuyer` and `WalmartBuyer`  
-We default to Amazon only. If you want to try WalmartBuyer as well, you'll need to raise the `TIMEOUT_IN_SECONDS` setting to some crazy high value just for a glimmer of hope to avoide the aggressive captcha challenges.  
+We default to Amazon and Newegg only. If you want to try WalmartBuyer as well, you'll probably need to raise the `WALMART_STOCK_CHECK_MIN_WAIT_IN_SECONDS` setting to some crazy high value just for a glimmer of hope to avoid the aggressive captcha challenges.  
 `NeweggBuyer` is currently being worked on as well, but I feel uneasy about that particular integration since Newegg keeps asking for the fucking CVV2 code.  
 
 `ITEM_NAME_1` (Just for logging purposes.)  

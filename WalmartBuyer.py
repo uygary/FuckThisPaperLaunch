@@ -1,6 +1,7 @@
 import abc
 import time
 import os
+import random
 from distutils.util import strtobool
 from dotenv import load_dotenv
 from selenium import webdriver
@@ -62,6 +63,8 @@ class WalmartBuyer(BuyerInterface, metaclass=abc.ABCMeta):
         self.login_url = f"{self.affiliate_url}{WalmartBuyer.LOGIN_ENDPOINT}"
         self.item_url = f"{self.affiliate_url}{self.item_endpoint}"
         self.cart_url = f"{self.affiliate_url}{WalmartBuyer.CART_ENDPOINT}"
+        self.stock_check_min_wait_in_seconds = Utility.get_config_value_int("WALMART_STOCK_CHECK_MIN_WAIT_IN_SECONDS")
+        random.seed(time.time())
 
         self.is_authenticated = False
         try:
@@ -124,14 +127,16 @@ class WalmartBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             raise BrowserConnectionException("Maximum retry limit reached!")
 
         try:
+            self.wait_pseudo_random()
             if not self.try_clear_cart():
                 return False
-
+            
+            self.wait_pseudo_random()
             self.browser.get(self.item_url)
 
             if not self.try_check_seller():
                 return False
-
+            
             return self.try_purchase_via_cart()
 
         except Exception as ex:
@@ -233,3 +238,7 @@ class WalmartBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             Utility.log_verbose(f"{WalmartBuyer.BUYER_NAME}::Failed to buy item via cart. Current stock: {self.item_counter.get()[0]} of {self.max_buy_count} at: {self.item_counter.get()[1]}. Error was: {str(ex)}")
 
             return False
+
+    def wait_pseudo_random(self):
+        time_to_wait = self.stock_check_min_wait_in_seconds + random.randint(0, 15)
+        time.sleep(time_to_wait)
