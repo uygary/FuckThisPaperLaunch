@@ -19,7 +19,7 @@ PS D:\CODE\FuckThisPaperLaunch> cp .\.env.sample .\.env
 ```
 Then edit the `.env` file to update these values:  
 `NUMBER_OF_ITEMS` (How many items you're trying to buy.)  
-`ENABLED_BUYERS` This is a comma separated list of buyers we want running. Currently valid values are: `AmazonBuyer` and `WalmartBuyer`  
+`ENABLED_BUYERS` This is a comma separated list of buyers we want running. Currently valid values are: `AmazonBuyer`, `NeweggBuyer` and `WalmartBuyer`  
 We default to Amazon only. If you want to try WalmartBuyer as well, you'll need to raise the `TIMEOUT_IN_SECONDS` setting to some crazy high value just for a glimmer of hope to avoide the aggressive captcha challenges.  
 `NeweggBuyer` is currently being worked on as well, but I feel uneasy about that particular integration since Newegg keeps asking for the fucking CVV2 code.  
 
@@ -31,8 +31,7 @@ We default to Amazon only. If you want to try WalmartBuyer as well, you'll need 
 Feel free to change the `AMAZON_ITEM_ENDPOINT_1` setting as well according to what you're actually trying to buy. There are some example endpoints in the environment file.  
 If you have more items to buy, keep editing and/or adding new entries for each of these configuration values that are suffixed with `2`, `3`, etc.  
 
-With the addition of WalmartBuyer implementation, these values have been added as well, so if want to enable Walmart, update them accordingly:  
-`WALMART_WHITELISTED_SELLERS`, `WALMART_LOGIN_EMAIL_1`, `WALMART_LOGIN_PASSWORD_1`, `WALMART_ITEM_ENDPOINT_1`
+With the addition of NeweggBuyer and WalmartBuyer implementations, their respective configurations have been added as well, so if want to either of them, you'll need to update the settings that are prefixed with `NEWEGG_` or `WALMART_`.  
 
 Update the `IS_TEST_RUN` value to `False` when you're happy with the settings.  The script will not actually buy anything as long as this is set to `True`.
 
@@ -67,5 +66,6 @@ Of course you could just use PyCharm Community Edition or Visual Studio to run t
 
 In order to stop the bot, just press `CRTL`+`C` and wait for it to shut itself down, disposing the browser connections.  It will take some time, but I suspect it might be safer to wait for it to do its thing. Since I'm not really familiar with the native driver, I'm not really sure whether it leaks or not otherwise.
 
-Note: If you run into captcha verifications, just open a new tab in the same browser, go past the captcha challenge, and close that tab. The bot should be able to pick up from there on the original tab.
-If, however, you keep getting capthca challenges down the line, it's not worth it. Just disable WalmartBuyer instead.
+Note: If you run into captcha verifications on Walmart, just open a new tab in the same browser, go past the captcha challenge, and close that tab. The bot should be able to pick up from there on the original tab.
+If, however, you keep getting capthca challenges down the line, it's not worth it. Just disable WalmartBuyer instead.  
+If you run into login verification on Newegg, you'll need to enter your OTP manually, and then the bot will pick up from there. You can raise the `NEWEGG_LOGIN_CONFIRMATION_WAIT_IN_SECONDS` value if you need more time to receive and open the Newegg email.

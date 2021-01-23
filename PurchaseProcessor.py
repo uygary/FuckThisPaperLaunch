@@ -1,4 +1,5 @@
 import time
+import concurrent.futures
 from Utility import Utility
 from DisposableList import DisposableList
 from ThreadSafeCounter import ThreadSafeCounter
@@ -59,21 +60,23 @@ class PurchaseProcessor():
         return True
 
     def process_purchase(self) -> bool:
-        is_item_bought = False
-        for buyer in self.buyers:
-            if not self.is_shutting_down and self.item_counter.get()[0] < self.max_buy_count:
-                Utility.log_information(f"Current stock of item #{self.item_indice+1} ({self.item_name}): {self.item_counter.get()[0]} of {self.max_buy_count}.")
-                try:
-                    is_item_bought = is_item_bought or buyer.try_buy_item()
-                    if is_item_bought:
-                        Utility.log_warning(f"{buyer.BUYER_NAME} purchased {self.item_name}.")
-                        Utility.beep()
-                        current_count = self.item_counter.get()
-                        Utility.log_warning(f"Current stock of item #{self.item_indice+1} ({self.item_name}): {current_count[0]} of {self.max_buy_count} at {current_count[1]}.")
-                except BrowserConnectionException as cex:
-                    Utility.log_error(f"{buyer.BUYER_NAME} faced fatal error trying to purchase {buyer.item_name}: {str(cex)}")
-                    raise
-        # Remember to add purchase detection.
-        #time.sleep(TIMEOUT_IN_SECONDS)
+        is_success = True
+        if not self.is_shutting_down:
+            with concurrent.futures.ThreadPoolExecutor(len(self.buyers)) as executor:
+                executor.map(self.execute_buyer, self.buyers)
 
-        return is_item_bought
+        return is_success
+
+    def execute_buyer(self, buyer: BuyerInterface):
+        while not self.is_shutting_down and self.item_counter.get()[0] < self.max_buy_count:
+            try:
+                is_item_bought = buyer.try_buy_item()
+                if is_item_bought:
+                    Utility.beep()
+                    time.sleep(2 * self.timeout_in_seconds)  # Really need to add proper purchase success detection across buyers.
+                else:
+                    time.sleep(self.timeout_in_seconds)
+            except BrowserConnectionException as cex:
+                Utility.log_error(f"Buyer {buyer.BUYER_NAME} faced fatal error trying to purchase {buyer.item_name}: {str(cex)}")
+                raise
+            Utility.log_information(f"Current stock of item #{self.item_indice+1} ({self.item_name}): {self.item_counter.get()[0]} of {self.max_buy_count}.")
