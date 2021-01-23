@@ -223,8 +223,8 @@ class WalmartBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             else:
                 checkout_button.click()
 
-            self.item_counter.increment(1, add_to_cart_cost)
-            Utility.log_warning(f"{WalmartBuyer.BUYER_NAME}::Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Add to Cart at: {add_to_cart_cost}")
+            self.item_counter.increment(1, total_cost)
+            Utility.log_warning(f"{WalmartBuyer.BUYER_NAME}::Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Add to Cart at: {total_cost}")
 
             return True
 
