@@ -32,6 +32,9 @@ Feel free to change the `AMAZON_ITEM_ENDPOINT_1` setting as well according to wh
 If you have more items to buy, keep editing and/or adding new entries for each of these configuration values that are suffixed with `2`, `3`, etc.  
 
 With the addition of NeweggBuyer and WalmartBuyer implementations, their respective configurations have been added as well, so if want to either of them, you'll need to update the settings that are prefixed with `NEWEGG_` or `WALMART_`.  
+Apparently Newegg can also require you to confirm your credit card number in some cases, so we have a `NEWEGG_CARD_NUMBER_1` setting to set it up. However, I would just stop the bot and go over that confirmation manually once instead of typing my credit card number in the environment setting of a random script I found on GitHub, built by a random guy on the Internet.  
+Not that setting the CVV2 number should make you any less wary, but unfortunately that's a requirement due to the Newegg purchase flow.  
+Meaning, if you indend to enable NeweggBuyer, you'll have to provide the `NEWEGG_CVV2_1` value as well.  
 
 Update the `IS_TEST_RUN` value to `False` when you're happy with the settings.  The script will not actually buy anything as long as this is set to `True`.
 

@@ -60,6 +60,7 @@ class PurchaseProcessor():
         return True
 
     def process_purchase(self) -> bool:
+        # TODO: Needs proper propagation and handling of success/failure results.
         is_success = True
         if not self.is_shutting_down:
             with concurrent.futures.ThreadPoolExecutor(len(self.buyers)) as executor:

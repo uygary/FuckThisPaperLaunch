@@ -130,36 +130,27 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             raise BrowserConnectionException("Maximum retry limit reached!")
 
         try:
-            # Remove existing items from cart
             if not self.try_clear_cart():
                 return False
 
-            # Go to listing
             self.browser.get(self.item_url)
 
-            # Check seller
             if not self.try_check_seller():
                 return False
 
-            # Attempt to use Buy Now
             if self.try_buy_now():
                 return True
 
             if not self.buy_now_only:
-                # Remove existing items from cart
                 if not self.try_clear_cart():
                     return False
 
-                # Go to listing
                 self.browser.get(self.item_url)
                 #self.browser.refresh()
-                #self.browser.get(self.item_url)
 
-                # Check seller
                 if not self.try_check_seller():
                     return False
 
-                # Attempt to buy via cart
                 return self.try_purchase_via_cart()
 
         except Exception as ex:
@@ -331,6 +322,7 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             return True
 
         except Exception as ex:
+            # TODO: Add success detection.
             Utility.log_verbose(f"{AmazonBuyer.BUYER_NAME}::Failed to buy item via cart. Current stock: {self.item_counter.get()[0]} of {self.max_buy_count} at: {self.item_counter.get()[1]}. Error was: {str(ex)}")
 
             return False

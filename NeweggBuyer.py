@@ -26,6 +26,8 @@ class NeweggBuyer(BuyerInterface, metaclass=abc.ABCMeta):
     BUYER_NAME = "NeweggBuyer"
     LOGIN_ENDPOINT = "/NewMyAccount/AccountLogin.aspx"
     CART_ENDPOINT = "/shop/cart"
+
+    # TODO: Clean up this pile of selectors.
     LOGIN_BUTTON_SELECTOR = "//div[@class='nav-complex']/a[@class='nav-complex-inner']/div[@class='nav-complex-title' and text()='Sign in / Register']"
     CART_BUTTON_SELECTOR = "//div[@class='nav-complex']/a[@class='nav-complex-inner']/i[@class='fas fa-shopping-cart']"
 
@@ -395,12 +397,12 @@ class NeweggBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             except Exception as rex:
                 Utility.log_warning(f"{NeweggBuyer.BUYER_NAME}::Failed to process order review. Assuming no review necessary: {str(rex)}")
 
-            ##################################################################
-            # TODO: Handle the last pile of shite inside the payment iframe. #
-            # Good for Newegg not to undertake PCI compliancy risks.         #
-            # They seem to be a safe bet from the customer perpective.       #
-            # But this redundancy is killing me from the bot perspective.    #
-            ##################################################################
+            ###############################################################
+            # TODO: Check if there are other flows that require handling. #
+            # Good for Newegg not to undertake PCI compliancy risks.      #
+            # They seem to be a safe bet from the customer perpective.    #
+            # But this redundancy is killing me from the bot perspective. #
+            ###############################################################
 
             try:
                 card_confirmation = self.browser.find_element_by_xpath("//div[contains(@id, 'zoid-ec-payment-')]/iframe")
