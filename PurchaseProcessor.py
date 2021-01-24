@@ -78,7 +78,7 @@ class PurchaseProcessor():
                 else:
                     time.sleep(self.timeout_in_seconds)
             except BrowserConnectionException as cex:
-                Utility.log_error(f"PurchaseProcessor::{self.item_indice}::{buyer.item_name}::Buyer {buyer.BUYER_NAME} faced fatal error trying to purchase: {str(cex)}")
+                Utility.log_error(f"PurchaseProcessor::{self.item_indice}::{buyer.item_name}::{buyer.BUYER_NAME} faced fatal error trying to purchase: {str(cex)}")
                 return False
             Utility.log_information(f"Current stock of item #{self.item_indice+1} ({self.item_name}): {self.item_counter.get()[0]} of {self.max_buy_count}.")
         return True
