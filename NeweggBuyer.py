@@ -332,8 +332,9 @@ class NeweggBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             checkout_button = self.browser.find_element_by_xpath(NeweggBuyer.CHECKOUT_BUTTON_SELECTOR)
             
             # Check if the item is already bought.
-            if self.item_counter.get()[0] >= self.max_buy_count:
-                return False
+            with self.item_counter as locked_counter:
+                if locked_counter.get_within_existing_lock()[0] >= max_buy_count:
+                    return False
             
             # Purchase
             #if self.is_test_run:
@@ -417,46 +418,44 @@ class NeweggBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             except Exception as cex:
                 Utility.log_warning(f"{NeweggBuyer.BUYER_NAME}::Failed to process card confirmation iframe. Assuming no confirmation necessary: {str(cex)}")
                 
-            try:
-                place_order_button = self.browser.find_element_by_xpath(NeweggBuyer.SUMMARY_PLACE_ORDER_SELECTOR)
+            # Check if the item is already bought.
+            with self.item_counter as locked_counter:
+                if locked_counter.get_within_existing_lock()[0] >= max_buy_count:
+                    return False
                 
-                # Check if the item is already bought.
-                if self.item_counter.get()[0] >= self.max_buy_count:
-                    return False
+                try:
+                    place_order_button = self.browser.find_element_by_xpath(NeweggBuyer.SUMMARY_PLACE_ORDER_SELECTOR)
 
-                if self.is_test_run:
-                    Utility.log_warning(f"{NeweggBuyer.BUYER_NAME}::Performing test run on Purchase.")
-                    is_order_success = True
-                else:
-                    place_order_button.click()
-            except Exception as sex:
-                Utility.log_verbose(f"{NeweggBuyer.BUYER_NAME}::Couldn't perform summary action: {str(cex)}")
+                    if self.is_test_run:
+                        Utility.log_warning(f"{NeweggBuyer.BUYER_NAME}::Performing test run on Purchase.")
+                        is_order_success = True
+                    else:
+                        # Purchase
+                        place_order_button.click()
+                except Exception as sex:
+                    Utility.log_verbose(f"{NeweggBuyer.BUYER_NAME}::Couldn't perform summary action: {str(cex)}")
 
-                self.wait.until(presence_of_element_located((By.XPATH, NeweggBuyer.PLACE_ORDER_BUTTON_SELECTOR)))
-                self.wait.until(visibility_of_element_located((By.XPATH, NeweggBuyer.PLACE_ORDER_BUTTON_SELECTOR)))
-                self.wait.until(element_to_be_clickable((By.XPATH, NeweggBuyer.PLACE_ORDER_BUTTON_SELECTOR)))
+                    self.wait.until(presence_of_element_located((By.XPATH, NeweggBuyer.PLACE_ORDER_BUTTON_SELECTOR)))
+                    self.wait.until(visibility_of_element_located((By.XPATH, NeweggBuyer.PLACE_ORDER_BUTTON_SELECTOR)))
+                    self.wait.until(element_to_be_clickable((By.XPATH, NeweggBuyer.PLACE_ORDER_BUTTON_SELECTOR)))
             
-                place_order_button = self.browser.find_element_by_xpath(NeweggBuyer.PLACE_ORDER_BUTTON_SELECTOR)
+                    place_order_button = self.browser.find_element_by_xpath(NeweggBuyer.PLACE_ORDER_BUTTON_SELECTOR)
             
-            if not is_order_success:
-                # Check if the item is already bought.
-                if self.item_counter.get()[0] >= self.max_buy_count:
-                    return False
+                if not is_order_success:
+                    # Purchase
+                    if self.is_test_run:
+                        Utility.log_warning(f"{NeweggBuyer.BUYER_NAME}::Performing test run on Purchase.")
+                        is_order_success = True
+                    else:
+                        place_order_button.click()
+                        self.wait.until(presence_of_element_located((By.XPATH, NeweggBuyer.ORDER_CONFIRMATION_MESSAGE_SELECTOR)))
+                        self.wait.until(visibility_of_element_located((By.XPATH, NeweggBuyer.ORDER_CONFIRMATION_MESSAGE_SELECTOR)))
+                        confirmation_message = self.browser.find_element_by_xpath(NeweggBuyer.PLACE_ORDER_BUTTON_SELECTOR).text
+                        is_order_success = confirmation_message == NeweggBuyer.ORDER_CONFIRMED_MESSAGE
 
-                # Purchase
-                if self.is_test_run:
-                    Utility.log_warning(f"{NeweggBuyer.BUYER_NAME}::Performing test run on Purchase.")
-                    is_order_success = True
-                else:
-                    place_order_button.click()
-                    self.wait.until(presence_of_element_located((By.XPATH, NeweggBuyer.ORDER_CONFIRMATION_MESSAGE_SELECTOR)))
-                    self.wait.until(visibility_of_element_located((By.XPATH, NeweggBuyer.ORDER_CONFIRMATION_MESSAGE_SELECTOR)))
-                    confirmation_message = self.browser.find_element_by_xpath(NeweggBuyer.PLACE_ORDER_BUTTON_SELECTOR).text
-                    is_order_success = confirmation_message == NeweggBuyer.ORDER_CONFIRMED_MESSAGE
-
-            if is_order_success:
-                self.item_counter.increment(1, total_cost)
-                Utility.log_warning(f"{NeweggBuyer.BUYER_NAME}::Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Add to Cart at: {total_cost}")
+                    if is_order_success:
+                        locked_counter.increment_within_existing_lock(1, total_cost)
+                        Utility.log_warning(f"{NeweggBuyer.BUYER_NAME}::Purchased {locked_counter.get_within_existing_lock()[0]} of {self.max_buy_count} via Add to Cart at: {total_cost}")
 
             return is_order_success
 

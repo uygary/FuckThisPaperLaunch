@@ -262,16 +262,17 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             turbo_checkout_button = self.browser.find_element_by_id("turbo-checkout-pyo-button")
 
             # Check if the item is bought via another BuyerInterface instance.
-            if self.item_counter.get()[0] >= max_buy_count:
-                return False
+            with self.item_counter as locked_counter:
+                if locked_counter.get_within_existing_lock()[0] >= max_buy_count:
+                    return False
 
-            if self.is_test_run:
-                Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Performing test run on Buy Now")
-            else:
-                turbo_checkout_button.click()
+                if self.is_test_run:
+                    Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Performing test run on Buy Now")
+                else:
+                    turbo_checkout_button.click()
 
-            # If we reached this far, it should mean success
-            self.item_counter.increment(1, buy_now_cost)
+                # If we reached this far, it should mean success
+                locked_counter.increment_within_existing_lock(1, buy_now_cost)
             Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Buy Now at: {buy_now_cost}")
             self.browser.switch_to.parent_frame()
 
@@ -308,15 +309,16 @@ class AmazonBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             order_confirmation_button = self.browser.find_element_by_name("placeYourOrder1")
 
             # Check if the item is bought via another BuyerInterface instance.
-            if self.item_counter.get()[0] >= max_buy_count:
-                return False
+            with self.item_counter as locked_counter:
+                if locked_counter.get_within_existing_lock()[0] >= max_buy_count:
+                    return False
 
-            if self.is_test_run:
-                Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Performing test run on Purchase via Cart")
-            else:
-                order_confirmation_button.click()
+                if self.is_test_run:
+                    Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Performing test run on Purchase via Cart")
+                else:
+                    order_confirmation_button.click()
 
-            self.item_counter.increment(1, add_to_cart_cost)
+                locked_counter.increment_within_existing_lock(1, add_to_cart_cost)
             Utility.log_warning(f"{AmazonBuyer.BUYER_NAME}::Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Add to Cart at: {add_to_cart_cost}")
 
             return True

@@ -219,17 +219,18 @@ class WalmartBuyer(BuyerInterface, metaclass=abc.ABCMeta):
             checkout_button = self.browser.find_element_by_xpath(WalmartBuyer.CHECKOUT_BUTTON_SELECTOR)
 
             # Check if the item is already bought.
-            if self.item_counter.get()[0] >= max_buy_count:
-                return False
+            with self.item_counter as locked_counter:
+                if locked_counter.get_within_existing_lock()[0] >= max_buy_count:
+                    return False
 
-            # Purchase
-            if self.is_test_run:
-                Utility.log_warning(f"{WalmartBuyer.BUYER_NAME}::Performing test run on Purchase via Cart")
-            else:
-                checkout_button.click()
+                # Purchase
+                if self.is_test_run:
+                    Utility.log_warning(f"{WalmartBuyer.BUYER_NAME}::Performing test run on Purchase via Cart")
+                else:
+                    checkout_button.click()
                 
-            # TODO: Add success detection.
-            self.item_counter.increment(1, total_cost)
+                # TODO: Add success detection.
+                locked_counter.increment_within_existing_lock(1, total_cost)
             Utility.log_warning(f"{WalmartBuyer.BUYER_NAME}::Purchased {self.item_counter.get()[0]} of {self.max_buy_count} via Add to Cart at: {total_cost}")
 
             return True

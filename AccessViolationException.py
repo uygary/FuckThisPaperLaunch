@@ -1,0 +1,2 @@
+class AccessViolationException(Exception):
+    pass

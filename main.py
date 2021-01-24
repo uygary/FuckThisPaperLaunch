@@ -90,17 +90,12 @@ if __name__ == "__main__":
                     purchase_processor.initialize_buyers()
 
             def execute_purchase(purchase_processor):
-                while not is_shutting_down and purchase_processor.item_counter.get()[0] < purchase_processor.max_buy_count:
-                    try:
-                        purchase_processor.process_purchase()
-                    except BrowserConnectionException as cex:
-                        Utility.log_error(f"Buyer faced fatal error trying to purchase {purchase_processor.item_name}: {str(cex)}")
-                        raise
+                if not is_shutting_down and purchase_processor.item_counter.get()[0] < purchase_processor.max_buy_count:
+                    purchase_processor.process_purchase()
 
             # Buy loops
-            if not is_shutting_down:
-                with concurrent.futures.ThreadPoolExecutor(len(purchase_processors)) as executor:
-                    executor.map(execute_purchase, purchase_processors)
+            with concurrent.futures.ThreadPoolExecutor(len(purchase_processors)) as executor:
+                executor.map(execute_purchase, purchase_processors)
                     
             for i in range(NUMBER_OF_ITEMS):
                 current_purchase = ITEM_COUNTERS[i].get()
