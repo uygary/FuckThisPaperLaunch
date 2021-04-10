@@ -19,7 +19,7 @@ class ThreadSafeCounter(object):
             self._count += count
             self._cost += cost
         else:
-            raise BrowserConnectionException("Cannot access unlocked resource!")
+            raise AccessViolationException("Cannot access unlocked resource!")
 
     def get(self) -> (int, float):
         with self._lock:
@@ -29,7 +29,7 @@ class ThreadSafeCounter(object):
         if self._lock.locked():
             return (self._count, self._cost)
         else:
-            raise BrowserConnectionException("Cannot access unlocked resource!")
+            raise AccessViolationException("Cannot access unlocked resource!")
 
     def __enter__():
         self._lock.acquire()
