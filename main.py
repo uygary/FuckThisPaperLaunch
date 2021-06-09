@@ -53,7 +53,7 @@ if __name__ == "__main__":
             for purchase_processor in purchase_processors:
                 purchase_processor.is_shutting_down = True
             
-        # Check out if we can trigger this without waiting for futures to complete.
+        # TODO: Check out if we can trigger this without waiting for futures to complete.
         signal.signal(signal.SIGINT, break_handler)
 
         os.system('color')
