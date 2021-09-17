@@ -21,9 +21,10 @@ PS D:\CODE\FuckThisPaperLaunch> cp .\.env.sample .\.env
 ```
 Then edit the `.env` file to update these values:  
 `NUMBER_OF_ITEMS` (How many items you're trying to buy.)  
-`ENABLED_BUYERS` This is a comma separated list of buyers we want running. Currently valid values are: `AmazonBuyer`, `NeweggBuyer` and `WalmartBuyer`  
+`ENABLED_BUYERS` This is a comma separated list of buyers we want running. Currently valid values are: `AmazonBuyer`, `NeweggBuyer`, `WalmartBuyer` and `BestBuyBuyer`  
 We default to Amazon and Newegg only. If you want to try WalmartBuyer as well, you'll probably need to raise the `WALMART_STOCK_CHECK_MIN_WAIT_IN_SECONDS` setting to some crazy high value just for a glimmer of hope of avoiding the aggressive captcha challenges.  
-`NeweggBuyer` is currently being worked on as well, but I feel uneasy about that particular integration since Newegg keeps asking for the fucking CVV2 code.  
+`NeweggBuyer` actually makes me feel uneasy about using or even releasing it since Newegg keeps asking for the fucking CVV2 code.  
+`BestBuyBuyer` is currently being worked on.  
 
 `ITEM_NAME_1` (Just for logging purposes.)  
 `MAX_BUY_COUNT_1`  
@@ -33,7 +34,7 @@ We default to Amazon and Newegg only. If you want to try WalmartBuyer as well, y
 Feel free to change the `AMAZON_ITEM_ENDPOINT_1` setting as well according to what you're actually trying to buy. There are some example endpoints in the environment file.  
 If you have more items to buy, keep editing and/or adding new entries for each of these configuration values that are suffixed with `2`, `3`, etc.  
 
-With the addition of NeweggBuyer and WalmartBuyer implementations, their respective configurations have been added as well, so if want to either of them, you'll need to update the settings that are prefixed with `NEWEGG_` or `WALMART_`.  
+With the addition of NeweggBuyer, WalmartBuyer and BestBuyBuyer implementations, their respective configurations have been added as well, so if want to either of them, you'll need to update the settings that are prefixed with `NEWEGG_` or `WALMART_`.  
 Apparently Newegg can also require you to confirm your credit card number in some cases, so we have a `NEWEGG_CARD_NUMBER_1` setting to set it up. However, I would just stop the bot and go over that confirmation manually once instead of typing my credit card number in the environment setting of a random script I found on GitHub, built by a random guy on the Internet.  
 Not that setting the CVV2 number should make you any less wary, but unfortunately that's a requirement due to the Newegg purchase flow.  
 Meaning, if you indend to enable NeweggBuyer, you'll have to provide the `NEWEGG_CVV2_1` value as well.  
@@ -73,4 +74,5 @@ In order to stop the bot, just press `CRTL`+`C` and wait for it to shut itself d
 
 Note: If you run into captcha verifications on Walmart, just open a new tab in the same browser, go past the captcha challenge, and close that tab. The bot should be able to pick up from there on the original tab.
 If, however, you keep getting capthca challenges down the line, it's not worth it. Just disable WalmartBuyer instead.  
-If you run into login verification on Newegg, you'll need to enter your OTP manually, and then the bot will pick up from there. You can raise the `NEWEGG_LOGIN_CONFIRMATION_WAIT_IN_SECONDS` value if you need more time to receive and open the Newegg email.
+If you run into login verification on Newegg, you'll need to enter your OTP manually, and then the bot will pick up from there. You can raise the `NEWEGG_LOGIN_CONFIRMATION_WAIT_IN_SECONDS` value if you need more time to receive and open the Newegg email.  
+If Best Buy requires you to verify login via 2FA through your recovery phone, you will need to input the verification code and continue yourself.

@@ -64,6 +64,7 @@ if __name__ == "__main__":
         BuyerInterface.register(AmazonBuyer)
         BuyerInterface.register(NeweggBuyer)
         BuyerInterface.register(WalmartBuyer)
+        BuyerInterface.register(BestBuyBuyer)
 
         enabled_buyer_implementations = []
         for enabled_buyer in ENABLED_BUYERS:

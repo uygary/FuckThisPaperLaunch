@@ -2,8 +2,9 @@ import threading
 from AccessViolationException import AccessViolationException
 
 
-# TODO: Properly use this via with as well.
 class ThreadSafeCounter(object):
+    exception_message = "Cannot access unlocked resource!"
+
     def __init__(self):
         self._count = 0
         self._cost = 0.00
@@ -19,7 +20,7 @@ class ThreadSafeCounter(object):
             self._count += count
             self._cost += cost
         else:
-            raise AccessViolationException("Cannot access unlocked resource!")
+            raise AccessViolationException(ThreadSafeCounter.exception_message)
 
     def get(self) -> (int, float):
         with self._lock:
@@ -29,7 +30,7 @@ class ThreadSafeCounter(object):
         if self._lock.locked():
             return (self._count, self._cost)
         else:
-            raise AccessViolationException("Cannot access unlocked resource!")
+            raise AccessViolationException(ThreadSafeCounter.exception_message)
 
     def __enter__():
         self._lock.acquire()
