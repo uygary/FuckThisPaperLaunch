@@ -13,9 +13,9 @@ from BuyerInterface import BuyerInterface
 from AmazonBuyer import AmazonBuyer
 from NeweggBuyer import NeweggBuyer
 from WalmartBuyer import WalmartBuyer
+from BestBuyBuyer import BestBuyBuyer
 from PurchaseProcessor import PurchaseProcessor
 from chromedriver_py import binary_path as chrome_driver_path
-from BrowserConnectionException import BrowserConnectionException
 from pydoc import locate
 
 
